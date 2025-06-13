@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white border-b shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-600 p-2 rounded-lg">
+                        <i class="fas fa-shield-alt text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Visitor Dashboard</h1>
+                        <p class="text-sm text-gray-600">Welcome, {{ session.name }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <a href="{{ url_for('logout') }}" class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Tabs -->
+        <div class="mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                    <button class="tab-button active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600" data-tab="dashboard">
+                        Dashboard
+                    </button>
+                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="new-request">
+                        New Request
+                    </button>
+                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="my-requests">
+                        My Requests
+                    </button>
+                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="profile">
+                        Profile
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content">
+            <!-- Quick Stats -->
+            <div class="grid md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Requests</p>
+                            <p class="text-3xl font-bold text-gray-900">{{ requests|length }}</p>
+                        </div>
+                        <i class="fas fa-file-alt text-3xl text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Approved</p>
+                            <p class="text-3xl font-bold text-green-600">{{ requests|selectattr('status', 'equalto', 'approved')|list|length }}</p>
+                        </div>
+                        <i class="fas fa-check-circle text-3xl text-green-600"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Pending</p>
+                            <p class="text-3xl font-bold text-yellow-600">{{ requests|selectattr('status', 'equalto', 'pending')|list|length }}</p>
+                        </div>
+                        <i class="fas fa-clock text-3xl text-yellow-600"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">This Month</p>
+                            <p class="text-3xl font-bold text-blue-600">{{ requests|length }}</p>
+                        </div>
+                        <i class="fas fa-calendar text-3xl text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Recent Activity</h3>
+                    <p class="text-sm text-gray-600">Your latest visit requests and updates</p>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        {% for request in requests[:3] %}
+                        <div class="flex items-center justify-between p-4 border rounded-lg">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                <div>
+                                    <p class="font-medium">{{ request.department }}</p>
+                                    <p class="text-sm text-gray-600">{{ request.date }} at {{ request.time }}</p>
+                                </div>
+                            </div>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full
+                                {% if request.status == 'approved' %}bg-green-100 text-green-800
+                                {% elif request.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ request.status.title() }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Request Tab -->
+        <div id="new-request-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Create New Visit Request</h3>
+                    <p class="text-sm text-gray-600">Fill in the details for your visit request</p>
+                </div>
+                <div class="p-6">
+                    <form id="new-request-form" class="space-y-6">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                                <select id="department" name="department" required class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select department</option>
+                                    <option value="Ministry of External Affairs">Ministry of External Affairs</option>
+                                    <option value="Ministry of Home Affairs">Ministry of Home Affairs</option>
+                                    <option value="Prime Minister's Office">Prime Minister's Office</option>
+                                    <option value="Ministry of Defence">Ministry of Defence</option>
+                                    <option value="Ministry of Finance">Ministry of Finance</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="visitType" class="block text-sm font-medium text-gray-700 mb-2">Visit Type</label>
+                                <select id="visitType" name="visitType" required class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select visit type</option>
+                                    <option value="regular">Regular Visit</option>
+                                    <option value="vip">VIP Visit</option>
+                                    <option value="vvip">VVIP Visit</option>
+                                    <option value="official">Official Business</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="visitDate" class="block text-sm font-medium text-gray-700 mb-2">Visit Date</label>
+                                <input type="date" id="visitDate" name="date" required class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label for="visitTime" class="block text-sm font-medium text-gray-700 mb-2">Preferred Time</label>
+                                <select id="visitTime" name="time" required class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select time slot</option>
+                                    <option value="09:00 AM">09:00 AM</option>
+                                    <option value="10:00 AM">10:00 AM</option>
+                                    <option value="11:00 AM">11:00 AM</option>
+                                    <option value="02:00 PM">02:00 PM</option>
+                                    <option value="03:00 PM">03:00 PM</option>
+                                    <option value="04:00 PM">04:00 PM</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="officer" class="block text-sm font-medium text-gray-700 mb-2">Meeting With</label>
+                                <input type="text" id="officer" name="officer" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Officer/Official name">
+                            </div>
+                            <div>
+                                <label for="contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                                <input type="tel" id="contact" name="contact" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Officer's contact number">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="purpose" class="block text-sm font-medium text-gray-700 mb-2">Purpose of Visit</label>
+                            <textarea id="purpose" name="purpose" rows="4" required class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Describe the purpose of your visit in detail"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition duration-200">
+                            Submit Visit Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Requests Tab -->
+        <div id="my-requests-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">My Visit Requests</h3>
+                    <p class="text-sm text-gray-600">Track the status of all your visit requests</p>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        {% for request in requests %}
+                        <div class="border-l-4 border-l-blue-500 bg-white border rounded-lg p-6">
+                            <div class="flex items-start justify-between">
+                                <div class="space-y-2">
+                                    <div class="flex items-center space-x-2">
+                                        <h3 class="font-semibold">{{ request.department }}</h3>
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full
+                                            {% if request.status == 'approved' %}bg-green-100 text-green-800
+                                            {% elif request.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                            {% else %}bg-red-100 text-red-800{% endif %}">
+                                            {{ request.status.title() }}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">Request ID: {{ request.id }}</p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-600">
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-calendar"></i>
+                                            <span>{{ request.date }}</span>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-clock"></i>
+                                            <span>{{ request.time }}</span>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-user"></i>
+                                            <span>{{ request.officer }}</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm">{{ request.purpose }}</p>
+                                    {% if request.remarks %}
+                                    <p class="text-sm text-red-600 bg-red-50 p-2 rounded">
+                                        <strong>Remarks:</strong> {{ request.remarks }}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                <div class="flex space-x-2">
+                                    {% if request.status == 'approved' %}
+                                    <button class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                                        <i class="fas fa-qrcode mr-1"></i>
+                                        View Pass
+                                    </button>
+                                    {% endif %}
+                                    <button class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                                        <i class="fas fa-download mr-1"></i>
+                                        Download
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Tab -->
+        <div id="profile-tab" class="tab-content hidden">
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Personal Information</h3>
+                        <p class="text-sm text-gray-600">Your registered details</p>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                            <input type="text" value="{{ session.name }}" readonly class="w-full p-3 border border-gray-300 rounded-md bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <input type="email" value="rahul.sharma@email.com" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mobile Number</label>
+                            <input type="tel" value="+91 9876543210" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                            <textarea rows="3" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">123 Main Street, New Delhi - 110001</textarea>
+                        </div>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                            Update Profile
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Security Information</h3>
+                        <p class="text-sm text-gray-600">Your verification status and security details</p>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-shield-alt text-green-600"></i>
+                                <span class="text-sm font-medium">Aadhaar Verified</span>
+                            </div>
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Verified</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-user text-green-600"></i>
+                                <span class="text-sm font-medium">Photo Verified</span>
+                            </div>
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Verified</span>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Visitor ID</label>
+                            <input type="text" value="{{ session.user_id }}" readonly class="w-full p-3 border border-gray-300 rounded-md bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Registration Date</label>
+                            <input type="text" value="January 10, 2024" readonly class="w-full p-3 border border-gray-300 rounded-md bg-gray-50">
+                        </div>
+                        <button class="w-full border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-50 transition duration-200">
+                            Change Password
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            
+            // Remove active class from all buttons
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Add active class to clicked button
+            this.classList.add('active', 'border-blue-500', 'text-blue-600');
+            this.classList.remove('border-transparent', 'text-gray-500');
+            
+            // Hide all tab contents
+            tabContents.forEach(content => content.classList.add('hidden'));
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+        });
+    });
+    
+    // New request form submission
+    document.getElementById('new-request-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        fetch('/api/submit_request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Request submitted successfully!');
+                this.reset();
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while submitting the request.');
+        });
+    });
+});
+</script>
+{% endblock %}

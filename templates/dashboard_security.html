@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white border-b shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-green-600 p-2 rounded-lg">
+                        <i class="fas fa-shield-alt text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Security Dashboard</h1>
+                        <p class="text-sm text-gray-600">Guard Station - Main Entrance</p>
+                        <p class="text-xs text-gray-500">Officer: {{ session.name }} (ID: {{ session.user_id }})</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">On Duty</span>
+                    <button class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <a href="{{ url_for('logout') }}" class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Quick Stats -->
+        <div class="grid md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Today's Entries</p>
+                        <p class="text-3xl font-bold text-blue-600">24</p>
+                    </div>
+                    <i class="fas fa-sign-in-alt text-3xl text-blue-600"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Currently Inside</p>
+                        <p class="text-3xl font-bold text-green-600">{{ entry_logs|selectattr('status', 'equalto', 'inside')|list|length }}</p>
+                    </div>
+                    <i class="fas fa-users text-3xl text-green-600"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Exits Today</p>
+                        <p class="text-3xl font-bold text-orange-600">{{ entry_logs|selectattr('status', 'equalto', 'exited')|list|length }}</p>
+                    </div>
+                    <i class="fas fa-sign-out-alt text-3xl text-orange-600"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Alerts</p>
+                        <p class="text-3xl font-bold text-red-600">0</p>
+                    </div>
+                    <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                    <button class="tab-button active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600" data-tab="entry">
+                        Entry/Exit
+                    </button>
+                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="logs">
+                        Entry Logs
+                    </button>
+                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="search">
+                        Search
+                    </button>
+                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="alerts">
+                        Alerts
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Entry/Exit Tab -->
+        <div id="entry-tab" class="tab-content">
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Verification Panel -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Visitor Verification</h3>
+                        <p class="text-sm text-gray-600">Scan QR code or use facial recognition to verify visitors</p>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div class="flex space-x-4">
+                            <button id="qr-scan-btn" class="scan-mode-btn active flex-1 bg-blue-600 text-white py-2 px-4 rounded-md">
+                                <i class="fas fa-qrcode mr-2"></i>
+                                QR Scan
+                            </button>
+                            <button id="face-scan-btn" class="scan-mode-btn flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50">
+                                <i class="fas fa-camera mr-2"></i>
+                                Face Scan
+                            </button>
+                        </div>
+
+                        <div id="scanner-area" class="bg-gray-100 rounded-lg p-8 text-center min-h-[300px] flex flex-col items-center justify-center">
+                            <div id="qr-scanner" class="scanner-mode">
+                                <i class="fas fa-qrcode text-6xl text-gray-400 mb-4"></i>
+                                <p class="text-gray-600 mb-4">Position QR code in the scanner</p>
+                                <button id="start-qr-scan" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md">
+                                    Start QR Scan
+                                </button>
+                            </div>
+
+                            <div id="face-scanner" class="scanner-mode hidden">
+                                <i class="fas fa-camera text-6xl text-gray-400 mb-4"></i>
+                                <p class="text-gray-600 mb-4">Position visitor in front of camera</p>
+                                <button id="start-face-scan" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md">
+                                    Start Face Scan
+                                </button>
+                            </div>
+
+                            <div id="scanning-state" class="scanner-mode hidden">
+                                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <p class="text-blue-600 font-semibold">Verifying...</p>
+                            </div>
+
+                            <div id="verified-state" class="scanner-mode hidden">
+                                <i class="fas fa-check-circle text-6xl text-green-600 mb-4"></i>
+                                <p class="text-green-600 font-semibold mb-4">Verification Successful!</p>
+                                <div class="bg-white p-4 rounded-lg border mb-4">
+                                    <p class="font-medium">Rahul Sharma</p>
+                                    <p class="text-sm text-gray-600">Pass ID: PASS-2024-001</p>
+                                    <p class="text-sm text-gray-600">Ministry of External Affairs</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="mark-entry-btn" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md">
+                                        <i class="fas fa-sign-in-alt mr-2"></i>
+                                        Mark Entry
+                                    </button>
+                                    <button id="mark-exit-btn" class="border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50">
+                                        <i class="fas fa-sign-out-alt mr-2"></i>
+                                        Mark Exit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Entry -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Manual Entry</h3>
+                        <p class="text-sm text-gray-600">Manual visitor entry for emergency situations</p>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <form id="manual-entry-form">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="passId" class="block text-sm font-medium text-gray-700 mb-2">Pass ID</label>
+                                    <input type="text" id="passId" name="passId" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter pass ID">
+                                </div>
+                                <div>
+                                    <label for="visitorName" class="block text-sm font-medium text-gray-700 mb-2">Visitor Name</label>
+                                    <input type="text" id="visitorName" name="visitorName" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter visitor name">
+                                </div>
+                                <div>
+                                    <label for="department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                                    <select id="department" name="department" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Select department</option>
+                                        <option value="Ministry of External Affairs">Ministry of External Affairs</option>
+                                        <option value="Ministry of Home Affairs">Ministry of Home Affairs</option>
+                                        <option value="Prime Minister's Office">Prime Minister's Office</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="action" class="block text-sm font-medium text-gray-700 mb-2">Action</label>
+                                    <select id="action" name="action" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Select action</option>
+                                        <option value="entry">Mark Entry</option>
+                                        <option value="exit">Mark Exit</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md">
+                                Submit Manual Entry
+                            </button>
+                        </form>
+
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-6">
+                            <div class="flex items-start space-x-2">
+                                <i class="fas fa-exclamation-triangle text-amber-600 mt-1"></i>
+                                <div class="text-sm text-amber-700">
+                                    <p class="font-medium">Manual Entry Notice</p>
+                                    <p>Manual entries are logged and require supervisor approval. Use only in emergency situations.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Entry Logs Tab -->
+        <div id="logs-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900">Today's Entry Logs</h3>
+                            <p class="text-sm text-gray-600">Real-time visitor entry and exit records</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                                <i class="fas fa-filter mr-1"></i>
+                                Filter
+                            </button>
+                            <button class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                                <i class="fas fa-download mr-1"></i>
+                                Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        {% for log in entry_logs %}
+                        <div class="border-l-4 border-l-blue-500 bg-white border rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <img src="/static/images/placeholder-photo.jpg" alt="{{ log.visitor_name }}" class="w-12 h-12 rounded-full border-2 border-gray-200">
+                                    <div>
+                                        <h3 class="font-semibold">{{ log.visitor_name }}</h3>
+                                        <p class="text-sm text-gray-600">{{ log.department }}</p>
+                                        <p class="text-sm text-gray-600">Pass ID: {{ log.id }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right space-y-2">
+                                    <div class="flex items-center space-x-4">
+                                        <div class="text-sm">
+                                            <p class="text-gray-600">Entry: {{ log.entry_time }}</p>
+                                            {% if log.exit_time %}
+                                            <p class="text-gray-600">Exit: {{ log.exit_time }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full
+                                            {% if log.status == 'inside' %}bg-blue-100 text-blue-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {% if log.status == 'inside' %}Inside{% else %}Exited{% endif %}
+                                        </span>
+                                    </div>
+                                    {% if log.status == 'inside' %}
+                                    <button class="mark-exit-btn px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50" data-pass-id="{{ log.id }}">
+                                        <i class="fas fa-sign-out-alt mr-1"></i>
+                                        Mark Exit
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Tab -->
+        <div id="search-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Search Visitor Records</h3>
+                    <p class="text-sm text-gray-600">Search historical visitor logs by various criteria</p>
+                </div>
+                <div class="p-6 space-y-6">
+                    <form id="search-form">
+                        <div class="grid md:grid-cols-4 gap-4">
+                            <div>
+                                <label for="searchName" class="block text-sm font-medium text-gray-700 mb-2">Visitor Name</label>
+                                <input type="text" id="searchName" name="searchName" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter name">
+                            </div>
+                            <div>
+                                <label for="searchPassId" class="block text-sm font-medium text-gray-700 mb-2">Pass ID</label>
+                                <input type="text" id="searchPassId" name="searchPassId" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter pass ID">
+                            </div>
+                            <div>
+                                <label for="searchDept" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                                <select id="searchDept" name="searchDept" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">All departments</option>
+                                    <option value="Ministry of External Affairs">Ministry of External Affairs</option>
+                                    <option value="Ministry of Home Affairs">Ministry of Home Affairs</option>
+                                    <option value="Prime Minister's Office">Prime Minister's Office</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="searchDate" class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                                <select id="searchDate" name="searchDate" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select range</option>
+                                    <option value="today">Today</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="custom">Custom Range</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md">
+                            <i class="fas fa-search mr-2"></i>
+                            Search Records
+                        </button>
+                    </form>
+
+                    <div class="border rounded-lg">
+                        <div class="p-4 bg-gray-50 border-b">
+                            <h3 class="font-semibold">Search Results</h3>
+                        </div>
+                        <div class="p-8 text-center text-gray-500">
+                            <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+                            <p>Enter search criteria and click search to view results</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="alerts-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Security Alerts</h3>
+                    <p class="text-sm text-gray-600">System alerts and notifications</p>
+                </div>
+                <div class="p-6">
+                    <div class="text-center py-12">
+                        <i class="fas fa-check-circle text-6xl text-green-600 mb-4"></i>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">All Clear</h3>
+                        <p class="text-gray-600">No security alerts at this time</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentScanMode = 'qr';
+    
+    // Tab functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            
+            // Remove active class from all buttons
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Add active class to clicked button
+            this.classList.add('active', 'border-blue-500', 'text-blue-600');
+            this.classList.remove('border-transparent', 'text-gray-500');
+            
+            // Hide all tab contents
+            tabContents.forEach(content => content.classList.add('hidden'));
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+        });
+    });
+    
+    // Scan mode buttons
+    document.getElementById('qr-scan-btn').addEventListener('click', function() {
+        currentScanMode = 'qr';
+        updateScanMode();
+    });
+    
+    document.getElementById('face-scan-btn').addEventListener('click', function() {
+        currentScanMode = 'face';
+        updateScanMode();
+    });
+    
+    function updateScanMode() {
+        // Update button styles
+        document.querySelectorAll('.scan-mode-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('border', 'border-gray-300', 'text-gray-700');
+        });
+        
+        if (currentScanMode === 'qr') {
+            document.getElementById('qr-scan-btn').classList.add('bg-blue-600', 'text-white');
+            document.getElementById('qr-scan-btn').classList.remove('border', 'border-gray-300', 'text-gray-700');
+        } else {
+            document.getElementById('face-scan-btn').classList.add('bg-blue-600', 'text-white');
+            document.getElementById('face-scan-btn').classList.remove('border', 'border-gray-300', 'text-gray-700');
+        }
+        
+        // Show appropriate scanner
+        document.querySelectorAll('.scanner-mode').forEach(mode => mode.classList.add('hidden'));
+        document.getElementById(currentScanMode + '-scanner').classList.remove('hidden');
+    }
+    
+    // Start scanning
+    document.getElementById('start-qr-scan').addEventListener('click', startScanning);
+    document.getElementById('start-face-scan').addEventListener('click', startScanning);
+    
+    function startScanning() {
+        // Show scanning state
+        document.querySelectorAll('.scanner-mode').forEach(mode => mode.classList.add('hidden'));
+        document.getElementById('scanning-state').classList.remove('hidden');
+        
+        // Simulate scanning process
+        setTimeout(() => {
+            document.getElementById('scanning-state').classList.add('hidden');
+            document.getElementById('verified-state').classList.remove('hidden');
+        }, 2000);
+    }
+    
+    // Mark entry/exit buttons
+    document.getElementById('mark-entry-btn').addEventListener('click', function() {
+        markEntry('PASS-2024-001', 'Rahul Sharma', 'Ministry of External Affairs');
+    });
+    
+    document.getElementById('mark-exit-btn').addEventListener('click', function() {
+        markExit('PASS-2024-001');
+    });
+    
+    // Mark exit buttons in logs
+    document.querySelectorAll('.mark-exit-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const passId = this.getAttribute('data-pass-id');
+            markExit(passId);
+        });
+    });
+    
+    function markEntry(passId, visitorName, department) {
+        fetch('/api/mark_entry', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                pass_id: passId,
+                visitor_name: visitorName,
+                department: department
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Entry marked successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while marking entry.');
+        });
+    }
+    
+    function markExit(passId) {
+        fetch('/api/mark_exit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                pass_id: passId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Exit marked successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while marking exit.');
+        });
+    }
+    
+    // Manual entry form
+    document.getElementById('manual-entry-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        if (data.action === 'entry') {
+            markEntry(data.passId, data.visitorName, data.department);
+        } else if (data.action === 'exit') {
+            markExit(data.passId);
+        }
+    });
+    
+    // Search form
+    document.getElementById('search-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        alert('Search functionality would be implemented here');
+    });
+    
+    // Initialize scan mode
+    updateScanMode();
+});
+</script>
+{% endblock %}

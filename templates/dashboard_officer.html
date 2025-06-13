@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white border-b shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-indigo-600 p-2 rounded-lg">
+                        <i class="fas fa-shield-alt text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Officer Dashboard</h1>
+                        <p class="text-sm text-gray-600">{{ session.name }} - MEA Department</p>
+                        <p class="text-xs text-gray-500">Code: MEA-DEL-001</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">Account Approved</span>
+                    <button class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <a href="{{ url_for('logout') }}" class="p-2 text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Quick Stats -->
+        <div class="grid md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Pending Reviews</p>
+                        <p class="text-3xl font-bold text-orange-600">{{ pending_requests|length }}</p>
+                    </div>
+                    <i class="fas fa-clock text-3xl text-orange-600"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Approved Today</p>
+                        <p class="text-3xl font-bold text-green-600">{{ approved_requests|length }}</p>
+                    </div>
+                    <i class="fas fa-check-circle text-3xl text-green-600"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">VIP Requests</p>
+                        <p class="text-3xl font-bold text-purple-600">3</p>
+                    </div>
+                    <i class="fas fa-users text-3xl text-purple-600"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">This Month</p>
+                        <p class="text-3xl font-bold text-blue-600">156</p>
+                    </div>
+                    <i class="fas fa-file-alt text-3xl text-blue-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                    <button class="tab-button active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600" data-tab="pending">
+                        Pending Requests
+                    </button>
+                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="approved">
+                        Approved
+                    </button>
+                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="rejected">
+                        Rejected
+                    </button>
+                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="employees">
+                        Employees
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Pending Requests Tab -->
+        <div id="pending-tab" class="tab-content">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Pending Visit Requests</h3>
+                    <p class="text-sm text-gray-600">Review and approve visitor requests for your department</p>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        {% for request in pending_requests %}
+                        <div class="border-l-4 border-l-orange-500 bg-white border rounded-lg p-6">
+                            <div class="flex items-start justify-between">
+                                <div class="space-y-3 flex-1">
+                                    <div class="flex items-center space-x-3">
+                                        <h3 class="font-semibold text-lg">{{ request.visitor_name }}</h3>
+                                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">REGULAR</span>
+                                        <span class="border border-gray-300 px-2 py-1 rounded text-xs">ID: {{ request.visitor_id }}</span>
+                                    </div>
+                                    <div class="grid md:grid-cols-2 gap-4 text-sm">
+                                        <div class="space-y-2">
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fas fa-calendar text-gray-500"></i>
+                                                <span>{{ request.date }} at {{ request.time }}</span>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fas fa-map-marker-alt text-gray-500"></i>
+                                                <span>{{ request.department }}</span>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fas fa-user text-gray-500"></i>
+                                                <span>Contact: +91 9876543210</span>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-2">
+                                            <p><strong>Purpose:</strong> {{ request.purpose }}</p>
+                                            <p><strong>Submitted:</strong> {{ request.submitted_on }}</p>
+                                            <p><strong>Aadhaar:</strong> XXXX-XXXX-1234</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col space-y-2 ml-4">
+                                    <button class="review-btn px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50" data-request-id="{{ request.id }}">
+                                        <i class="fas fa-eye mr-1"></i>
+                                        Review
+                                    </button>
+                                    <button class="approve-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm rounded" data-request-id="{{ request.id }}">
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        Quick Approve
+                                    </button>
+                                    <button class="reject-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm rounded" data-request-id="{{ request.id }}">
+                                        <i class="fas fa-times-circle mr-1"></i>
+                                        Reject
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approved Requests Tab -->
+        <div id="approved-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Approved Visit Requests</h3>
+                    <p class="text-sm text-gray-600">Recently approved visitor requests</p>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        {% for request in approved_requests %}
+                        <div class="border-l-4 border-l-green-500 bg-white border rounded-lg p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="space-y-2">
+                                    <div class="flex items-center space-x-3">
+                                        <h3 class="font-semibold">{{ request.visitor_name }}</h3>
+                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Approved</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600">{{ request.department }}</p>
+                                    <p class="text-sm text-gray-600">{{ request.date }} at {{ request.time }}</p>
+                                    <p class="text-sm">{{ request.purpose }}</p>
+                                </div>
+                                <div class="text-right space-y-2">
+                                    <p class="text-sm text-gray-600">Pass ID: PASS-2024-001</p>
+                                    <p class="text-sm text-gray-600">Approved: {{ request.submitted_on }}</p>
+                                    <button class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                                        <i class="fas fa-eye mr-1"></i>
+                                        View Pass
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rejected Tab -->
+        <div id="rejected-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Rejected Requests</h3>
+                    <p class="text-sm text-gray-600">Requests that have been rejected</p>
+                </div>
+                <div class="p-6">
+                    <div class="text-center py-12">
+                        <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Rejected Requests</h3>
+                        <p class="text-gray-600">All requests have been processed successfully</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employees Tab -->
+        <div id="employees-tab" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900">Department Employees</h3>
+                            <p class="text-sm text-gray-600">Manage employees under your department</p>
+                        </div>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                            <i class="fas fa-plus mr-2"></i>
+                            Add Employee
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4">
+                        <input type="text" placeholder="Search employees..." class="w-full max-w-sm p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="border rounded-lg overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="text-left p-4 font-medium text-gray-900">Name</th>
+                                    <th class="text-left p-4 font-medium text-gray-900">Employee ID</th>
+                                    <th class="text-left p-4 font-medium text-gray-900">Designation</th>
+                                    <th class="text-left p-4 font-medium text-gray-900">Status</th>
+                                    <th class="text-left p-4 font-medium text-gray-900">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-t">
+                                    <td class="p-4">Suresh Kumar</td>
+                                    <td class="p-4">EMP-2024-001</td>
+                                    <td class="p-4">Assistant Secretary</td>
+                                    <td class="p-4">
+                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Active</span>
+                                    </td>
+                                    <td class="p-4">
+                                        <button class="p-1 text-gray-600 hover:text-gray-900">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="review-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Review Visit Request</h3>
+                    <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="text-center">
+                            <img src="/static/images/placeholder-photo.jpg" alt="Visitor Photo" class="w-32 h-32 rounded-lg mx-auto border-2 border-gray-200">
+                            <p class="text-sm text-gray-600 mt-2">Live Captured Photo</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Personal Information</h4>
+                            <div class="bg-gray-50 p-3 rounded-lg space-y-1 text-sm">
+                                <p><strong>Name:</strong> <span id="modal-visitor-name"></span></p>
+                                <p><strong>Visitor ID:</strong> <span id="modal-visitor-id"></span></p>
+                                <p><strong>Contact:</strong> +91 9876543210</p>
+                                <p><strong>Aadhaar:</strong> XXXX-XXXX-1234</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold mb-2">Visit Details</h4>
+                            <div class="bg-gray-50 p-3 rounded-lg space-y-1 text-sm">
+                                <p><strong>Department:</strong> <span id="modal-department"></span></p>
+                                <p><strong>Date & Time:</strong> <span id="modal-datetime"></span></p>
+                                <p><strong>Visit Type:</strong> REGULAR</p>
+                                <p><strong>Purpose:</strong> <span id="modal-purpose"></span></p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Documents</h4>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                    <span class="text-sm">aadhaar_card.pdf</span>
+                                    <button class="p-1 text-gray-600 hover:text-gray-900">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="officer-remarks" class="block text-sm font-medium text-gray-700 mb-2">Officer Remarks</label>
+                            <textarea id="officer-remarks" rows="3" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Add your remarks here..."></textarea>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="modal-approve" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Approve
+                            </button>
+                            <button id="modal-reject" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentRequestId = null;
+    
+    // Tab functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            
+            // Remove active class from all buttons
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            // Add active class to clicked button
+            this.classList.add('active', 'border-blue-500', 'text-blue-600');
+            this.classList.remove('border-transparent', 'text-gray-500');
+            
+            // Hide all tab contents
+            tabContents.forEach(content => content.classList.add('hidden'));
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+        });
+    });
+    
+    // Review button functionality
+    document.querySelectorAll('.review-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            currentRequestId = this.getAttribute('data-request-id');
+            // Populate modal with request data (simplified for demo)
+            document.getElementById('modal-visitor-name').textContent = 'Amit Kumar';
+            document.getElementById('modal-visitor-id').textContent = 'VIS-2024-001235';
+            document.getElementById('modal-department').textContent = 'Ministry of External Affairs';
+            document.getElementById('modal-datetime').textContent = '2024-01-22 at 10:00 AM';
+            document.getElementById('modal-purpose').textContent = 'Passport related inquiry';
+            
+            document.getElementById('review-modal').classList.remove('hidden');
+            document.getElementById('review-modal').classList.add('flex');
+        });
+    });
+    
+    // Close modal
+    document.getElementById('close-modal').addEventListener('click', function() {
+        document.getElementById('review-modal').classList.add('hidden');
+        document.getElementById('review-modal').classList.remove('flex');
+    });
+    
+    // Approve button functionality
+    document.querySelectorAll('.approve-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const requestId = this.getAttribute('data-request-id');
+            approveRequest(requestId);
+        });
+    });
+    
+    // Modal approve button
+    document.getElementById('modal-approve').addEventListener('click', function() {
+        if (currentRequestId) {
+            approveRequest(currentRequestId);
+        }
+    });
+    
+    // Reject button functionality
+    document.querySelectorAll('.reject-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const requestId = this.getAttribute('data-request-id');
+            rejectRequest(requestId);
+        });
+    });
+    
+    // Modal reject button
+    document.getElementById('modal-reject').addEventListener('click', function() {
+        if (currentRequestId) {
+            const remarks = document.getElementById('officer-remarks').value;
+            rejectRequest(currentRequestId, remarks);
+        }
+    });
+    
+    function approveRequest(requestId) {
+        fetch('/api/approve_request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ request_id: requestId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Request approved successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while approving the request.');
+        });
+    }
+    
+    function rejectRequest(requestId, remarks = '') {
+        fetch('/api/reject_request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ request_id: requestId, remarks: remarks })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Request rejected successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while rejecting the request.');
+        });
+    }
+});
+</script>
+{% endblock %}
