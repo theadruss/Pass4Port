@@ -14,204 +14,695 @@
                     </div>
                     <div>
                         <h1 class="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-                        <p class="text-sm text-gray-600">Welcome, {{ session.name }}</p>
-                        <p class="text-xs text-gray-500">ID: {{ session.user_id }}</p>
+                        <p class="text-sm text-gray-600">System Administration Panel</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button class="p-2 text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-bell"></i>
-                    </button>
-                    <button class="p-2 text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-cog"></i>
-                    </button>
-                    <a href="{{ url_for('logout') }}" class="p-2 text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
+                    <!-- Notification Icon -->
+                    <div class="relative">
+                        <button id="notification-btn" class="p-2 text-gray-600 hover:text-gray-900 relative">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_count > 0 %}
+                            <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ unread_count }}</span>
+                            {% endif %}
+                        </button>
+                        <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 dropdown-content">
+                            <div class="p-3 border-b">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-semibold">Notifications</h3>
+                                    <button onclick="markAllNotificationsRead()" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                                </div>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto">
+                                {% if notifications %}
+                                    {% for notification in notifications %}
+                                    <div id="notification-{{ notification.id }}" class="notification-item p-3 border-b hover:bg-gray-50 {% if notification.is_read == 0 %}bg-blue-50 unread{% endif %}">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mt-0.5">
+                                                <i class="fas fa-{{ notification.icon }} {% if notification.type == 'success' %}text-green-500{% elif notification.type == 'warning' %}text-yellow-500{% elif notification.type == 'error' %}text-red-500{% else %}text-blue-500{% endif %}"></i>
+                                            </div>
+                                            <div class="ml-3 w-0 flex-1">
+                                                <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
+                                                <p class="text-sm text-gray-500">{{ notification.message }}</p>
+                                                <p class="text-xs text-gray-400 mt-1">{{ notification.created_at }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <div class="p-4 text-center text-gray-500">No notifications</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Settings Icon -->
+                    <div class="relative">
+                        <button id="settings-btn" class="p-2 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <div id="settings-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 dropdown-content">
+                            <div class="py-1">
+                                <a href="{{ url_for('profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user mr-2"></i>Profile
+                                </a>
+                                <a href="{{ url_for('settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-cog mr-2"></i>Settings
+                                </a>
+                                <a href="{{ url_for('agencies') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-building mr-2"></i>Agencies
+                                </a>
+                                <div class="border-t border-gray-100"></div>
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="container mx-auto px-4 py-8">
-        <!-- Quick Stats -->
-        <div class="grid md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
+        <!-- System Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="bg-blue-100 p-3 rounded-lg">
+                        <i class="fas fa-users text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">Total Users</p>
-                        <p class="text-3xl font-bold text-blue-600">{{ stats.total_users }}</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.total_users }}</p>
                     </div>
-                    <i class="fas fa-users text-3xl text-blue-600"></i>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="bg-green-100 p-3 rounded-lg">
+                        <i class="fas fa-user-check text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">Active Visitors</p>
-                        <p class="text-3xl font-bold text-green-600">{{ stats.active_visitors }}</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.active_visitors }}</p>
                     </div>
-                    <i class="fas fa-user-check text-3xl text-green-600"></i>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="bg-yellow-100 p-3 rounded-lg">
+                        <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
                         <p class="text-sm font-medium text-gray-600">Pending Approvals</p>
-                        <p class="text-3xl font-bold text-yellow-600">{{ stats.pending_approvals }}</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.pending_approvals }}</p>
                     </div>
-                    <i class="fas fa-user-clock text-3xl text-yellow-600"></i>
                 </div>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Flagged IDs</p>
-                        <p class="text-3xl font-bold text-red-600">{{ stats.flagged_ids }}</p>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="bg-red-100 p-3 rounded-lg">
+                        <i class="fas fa-user-slash text-red-600 text-xl"></i>
                     </div>
-                    <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Flagged IDs</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.flagged_ids }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="bg-purple-100 p-3 rounded-lg">
+                        <i class="fas fa-building text-purple-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Pending Agencies</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.pending_agencies }}</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-6">
-            <!-- Pending Registrations -->
-            <div class="bg-white rounded-lg shadow">
-                <div class="p-6 border-b">
-                    <h2 class="text-lg font-semibold text-gray-800">
-                        <i class="fas fa-user-clock text-yellow-600 mr-2"></i>
-                        Pending Registrations
-                    </h2>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for user in pending_registrations %}
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.username }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ user.name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.role|capitalize }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.registration_date }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <div class="flex space-x-2">
-                                        <a href="{{ url_for('approve_registration', username=user.username) }}" class="px-3 py-1 bg-green-100 text-green-800 rounded-md hover:bg-green-200">
-                                            Approve
-                                        </a>
-                                        <a href="{{ url_for('reject_registration', username=user.username) }}" class="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200">
-                                            Reject
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                            
-                            {% if pending_registrations|length == 0 %}
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
-                                    No pending registrations found.
-                                </td>
-                            </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Flagged Aadhaar Numbers -->
-            <div class="bg-white rounded-lg shadow">
-                <div class="p-6 border-b">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold text-gray-800">
-                            <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
-                            Flagged Aadhaar Numbers
-                        </h2>
-                        <button id="add-flagged-btn" class="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200">
-                            <i class="fas fa-plus mr-1"></i>Add New
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aadhaar Number</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for aadhaar in flagged_aadhaar %}
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ aadhaar.aadhaar[:4] }}XXXX{{ aadhaar.aadhaar[-4:] }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ aadhaar.reason }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ aadhaar.added_by }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ aadhaar.added_on }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <button class="remove-flagged-btn px-3 py-1 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200" data-aadhaar="{{ aadhaar.aadhaar }}">
-                                        Remove
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                            
-                            {% if flagged_aadhaar|length == 0 %}
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
-                                    No flagged Aadhaar numbers found.
-                                </td>
-                            </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        
-        <!-- System Logs -->
-        <div class="bg-white rounded-lg shadow mt-6">
-            <div class="p-6 border-b">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-gray-800">
-                        <i class="fas fa-list-alt text-blue-600 mr-2"></i>
-                        System Logs
-                    </h2>
-                    <div class="flex space-x-2">
-                        <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200">
-                            <i class="fas fa-filter mr-1"></i>Filter
-                        </button>
-                        <button class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm hover:bg-green-200">
-                            <i class="fas fa-download mr-1"></i>Export
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="p-6">
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="flex items-center text-sm text-gray-600 mb-3">
-                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                        <span>System logs are available in the server logs directory.</span>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- User Management Tabs -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex -mb-px">
+                            <button onclick="showUserTab('pending')" id="pending-tab" class="user-tab py-4 px-6 text-center border-b-2 font-medium text-sm border-blue-500 text-blue-600">
+                                Pending Approvals
+                            </button>
+                            <button onclick="showUserTab('visitors')" id="visitors-tab" class="user-tab py-4 px-6 text-center border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                Visitors
+                            </button>
+                            <button onclick="showUserTab('officers')" id="officers-tab" class="user-tab py-4 px-6 text-center border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                Officers
+                            </button>
+                            <button onclick="showUserTab('security')" id="security-tab" class="user-tab py-4 px-6 text-center border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                Security
+                            </button>
+                            <button onclick="showUserTab('agencies')" id="agencies-tab" class="user-tab py-4 px-6 text-center border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                                Agencies
+                            </button>
+                        </nav>
                     </div>
                     
-                    <div class="bg-gray-100 p-3 rounded-lg font-mono text-xs text-gray-700 overflow-x-auto">
-                        <p>[2024-01-15 09:30:12] INFO: System started</p>
-                        <p>[2024-01-15 09:35:24] INFO: User 'admin' logged in</p>
-                        <p>[2024-01-15 10:12:45] INFO: New visitor registration: Rahul Sharma</p>
-                        <p>[2024-01-15 10:30:18] INFO: Visit request approved by Dr. Rajesh Kumar</p>
-                        <p>[2024-01-15 11:05:42] WARNING: Failed login attempt for user 'unknown'</p>
+                    <!-- Pending Approvals Tab -->
+                    <div id="pending-tab-content" class="user-tab-content p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Pending User Approvals</h3>
+                        {% if pending_registrations %}
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registered</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for user in pending_registrations %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10">
+                                                        <img class="h-10 w-10 rounded-full" src="{{ url_for('static', filename='uploads/' + user.photo_file) if user.photo_file and user.photo_file != 'placeholder.jpg' else url_for('static', filename='images/placeholder.jpg') }}" alt="">
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">{{ user.name }}</div>
+                                                        <div class="text-sm text-gray-500">{{ user.phone }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    {% if user.role == 'visitor' %}bg-green-100 text-green-800
+                                                    {% elif user.role == 'officer' %}bg-blue-100 text-blue-800
+                                                    {% elif user.role == 'security' %}bg-yellow-100 text-yellow-800
+                                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                    {{ user.role|title }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.user_id }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.registration_date }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button onclick="showUserDetails('{{ user.username }}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                    <i class="fas fa-eye"></i> View
+                                                </button>
+                                                <a href="{{ url_for('approve_registration', username=user.username) }}" class="text-green-600 hover:text-green-900 mr-3">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </a>
+                                                <a href="{{ url_for('reject_registration', username=user.username) }}" class="text-red-600 hover:text-red-900">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-8">
+                                <p class="text-gray-500">No pending user registrations</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Visitors Tab -->
+                    <div id="visitors-tab-content" class="user-tab-content p-6 hidden">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Visitor Management</h3>
+                        <div class="mb-4 flex justify-between items-center">
+                            <div class="relative w-64">
+                                <input type="text" id="visitor-search" placeholder="Search visitors..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <div class="absolute left-3 top-2.5 text-gray-400">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                            </div>
+                            <button onclick="exportVisitors()" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                <i class="fas fa-file-export mr-2"></i>Export
+                            </button>
+                        </div>
+                        
+                        {% if visitors %}
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aadhaar</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for visitor in visitors %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10">
+                                                        <img class="h-10 w-10 rounded-full" src="{{ url_for('static', filename='uploads/' + visitor.photo_file) if visitor.photo_file and visitor.photo_file != 'placeholder.jpg' else url_for('static', filename='images/placeholder.jpg') }}" alt="">
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">{{ visitor.name }}</div>
+                                                        <div class="text-sm text-gray-500">{{ visitor.email }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ visitor.user_id }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {% if visitor.aadhaar %}
+                                                    XXXX-XXXX-{{ visitor.aadhaar[-4:] }}
+                                                {% else %}
+                                                    Not provided
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    {% if visitor.status == 'active' %}bg-green-100 text-green-800
+                                                    {% elif visitor.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                                    {{ visitor.status|title }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ visitor.last_login if visitor.last_login else 'Never' }}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button onclick="showUserDetails('{{ visitor.username }}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                    <i class="fas fa-eye"></i> View
+                                                </button>
+                                                {% if visitor.status == 'active' %}
+                                                <button onclick="deactivateUser('{{ visitor.username }}')" class="text-yellow-600 hover:text-yellow-900">
+                                                    <i class="fas fa-user-slash"></i> Deactivate
+                                                </button>
+                                                {% else %}
+                                                <button onclick="activateUser('{{ visitor.username }}')" class="text-green-600 hover:text-green-900">
+                                                    <i class="fas fa-user-check"></i> Activate
+                                                </button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-8">
+                                <p class="text-gray-500">No visitors found</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Officers Tab -->
+                    <div id="officers-tab-content" class="user-tab-content p-6 hidden">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Officer Management</h3>
+                        {% if officers %}
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for officer in officers %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10">
+                                                        <img class="h-10 w-10 rounded-full" src="{{ url_for('static', filename='uploads/' + officer.photo_file) if officer.photo_file and officer.photo_file != 'placeholder.jpg' else url_for('static', filename='images/placeholder.jpg') }}" alt="">
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">{{ officer.name }}</div>
+                                                        <div class="text-sm text-gray-500">{{ officer.phone }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ officer.user_id }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ officer.email }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    {% if officer.status == 'active' %}bg-green-100 text-green-800
+                                                    {% elif officer.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                                    {{ officer.status|title }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button onclick="showUserDetails('{{ officer.username }}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                    <i class="fas fa-eye"></i> View
+                                                </button>
+                                                {% if officer.status == 'active' %}
+                                                <button onclick="deactivateUser('{{ officer.username }}')" class="text-yellow-600 hover:text-yellow-900">
+                                                    <i class="fas fa-user-slash"></i> Deactivate
+                                                </button>
+                                                {% else %}
+                                                <button onclick="activateUser('{{ officer.username }}')" class="text-green-600 hover:text-green-900">
+                                                    <i class="fas fa-user-check"></i> Activate
+                                                </button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-8">
+                                <p class="text-gray-500">No officers found</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Security Tab -->
+                    <div id="security-tab-content" class="user-tab-content p-6 hidden">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Security Personnel Management</h3>
+                        {% if security_personnel %}
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for security in security_personnel %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10">
+                                                        <img class="h-10 w-10 rounded-full" src="{{ url_for('static', filename='uploads/' + security.photo_file) if security.photo_file and security.photo_file != 'placeholder.jpg' else url_for('static', filename='images/placeholder.jpg') }}" alt="">
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">{{ security.name }}</div>
+                                                        <div class="text-sm text-gray-500">{{ security.phone }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ security.user_id }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ security.email }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    {% if security.status == 'active' %}bg-green-100 text-green-800
+                                                    {% elif security.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                                    {{ security.status|title }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <button onclick="showUserDetails('{{ security.username }}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                    <i class="fas fa-eye"></i> View
+                                                </button>
+                                                {% if security.status == 'active' %}
+                                                <button onclick="deactivateUser('{{ security.username }}')" class="text-yellow-600 hover:text-yellow-900">
+                                                    <i class="fas fa-user-slash"></i> Deactivate
+                                                </button>
+                                                {% else %}
+                                                <button onclick="activateUser('{{ security.username }}')" class="text-green-600 hover:text-green-900">
+                                                    <i class="fas fa-user-check"></i> Activate
+                                                </button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-8">
+                                <p class="text-gray-500">No security personnel found</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Agencies Tab -->
+                    <div id="agencies-tab-content" class="user-tab-content p-6 hidden">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Agency Management</h3>
+                        <div class="mb-4">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-medium text-gray-700">Pending Agency Approvals</h4>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    {{ pending_agency_registrations|length }} pending
+                                </span>
+                            </div>
+                            
+                            {% if pending_agency_registrations %}
+                                <div class="mt-2 space-y-3">
+                                    {% for agency in pending_agency_registrations %}
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <h5 class="font-medium text-gray-900">{{ agency.agency_name }}</h5>
+                                                <p class="text-sm text-gray-500">{{ agency.agency_type }} - {{ agency.agency_code }}</p>
+                                                <p class="text-xs text-gray-400 mt-1">{{ agency.contact_email }} | {{ agency.contact_phone }}</p>
+                                            </div>
+                                            <div class="flex space-x-2">
+                                                <button onclick="showAgencyDetails('{{ agency.agency_code }}')" class="text-blue-600 hover:text-blue-900 text-sm">
+                                                    <i class="fas fa-eye mr-1"></i> Review
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 flex justify-end space-x-2">
+                                            <a href="{{ url_for('approve_agency', agency_code=agency.agency_code) }}" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">
+                                                <i class="fas fa-check mr-1"></i>Approve
+                                            </a>
+                                            <a href="{{ url_for('reject_agency', agency_code=agency.agency_code) }}" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
+                                                <i class="fas fa-times mr-1"></i>Reject
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <p class="text-gray-500 text-sm">No pending agency registrations</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mt-6">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-medium text-gray-700">Approved Agencies</h4>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    {{ approved_agencies|length }} active
+                                </span>
+                            </div>
+                            
+                            {% if approved_agencies %}
+                                <div class="mt-2 overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agency Name</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-200">
+                                            {% for agency in approved_agencies %}
+                                            <tr>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <div class="text-sm font-medium text-gray-900">{{ agency.agency_name }}</div>
+                                                    <div class="text-sm text-gray-500">{{ agency.website if agency.website else 'No website' }}</div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ agency.agency_type }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ agency.agency_code }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {{ agency.contact_person }}<br>
+                                                    {{ agency.contact_email }}
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                        {% if agency.status == 'approved' %}bg-green-100 text-green-800
+                                                        {% elif agency.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                                        {{ agency.status|title }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <button onclick="showAgencyDetails('{{ agency.agency_code }}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                        <i class="fas fa-eye"></i> View
+                                                    </button>
+                                                    <button onclick="suspendAgency('{{ agency.agency_code }}')" class="text-yellow-600 hover:text-yellow-900">
+                                                        <i class="fas fa-pause"></i> Suspend
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <p class="text-gray-500 text-sm">No approved agencies</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Send Notification -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Send Notification</h2>
+                    </div>
+                    <div class="p-6">
+                        <div id="notification-alert" class="hidden rounded-md p-4 mb-4"></div>
+                        <form id="send-notification-form" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="notification-title" class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                    <input type="text" id="notification-title" name="title" required 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                
+                                <div>
+                                    <label for="target-audience" class="block text-sm font-medium text-gray-700 mb-1">Target Audience</label>
+                                    <select id="target-audience" name="target_audience" required 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="all">All Users</option>
+                                        <option value="visitor">Visitors</option>
+                                        <option value="officer">Officers</option>
+                                        <option value="security">Security</option>
+                                        <option value="agency">Agencies</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="notification-type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                                    <select id="notification-type" name="type" 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="info">Information</option>
+                                        <option value="success">Success</option>
+                                        <option value="warning">Warning</option>
+                                        <option value="error">Error</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="notification-priority" class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                                    <select id="notification-priority" name="priority" 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="normal">Normal</option>
+                                        <option value="high">High</option>
+                                        <option value="urgent">Urgent</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="notification-message" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                <textarea id="notification-message" name="message" rows="4" required 
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                            
+                            <div class="flex justify-end">
+                                <button type="submit" id="send-notification-btn" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                    <i class="fas fa-paper-plane mr-2"></i>Send Notification
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
+                    </div>
+                    <div class="p-6 space-y-2">
+                        <a href="{{ url_for('register_agency') }}" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-center block text-sm">
+                            <i class="fas fa-building mr-2"></i>Add Agency
+                        </a>
+                        <button onclick="document.getElementById('notification-title').focus()" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 text-center block text-sm">
+                            <i class="fas fa-bullhorn mr-2"></i>Send Notification
+                        </button>
+                        <button onclick="document.getElementById('notice-title').focus()" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 text-center block text-sm">
+                            <i class="fas fa-clipboard mr-2"></i>Create Notice
+                        </button>
+                        <a href="{{ url_for('agencies') }}" class="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 text-center block text-sm">
+                            <i class="fas fa-list mr-2"></i>View All Agencies
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Recent Notices -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">Recent Notices</h3>
+                    </div>
+                    <div class="p-6">
+                        {% if notices %}
+                            {% for notice in notices[:5] %}
+                            <div class="border-b border-gray-200 pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0">
+                                <h4 class="font-medium text-gray-900 text-sm">{{ notice.title }}</h4>
+                                <p class="text-xs text-gray-500 mt-1">{{ notice.content[:80] }}{% if notice.content|length > 80 %}...{% endif %}</p>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-xs text-gray-400">{{ notice.created_at }}</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium 
+                                        {% if notice.priority == 'urgent' %}bg-red-100 text-red-800
+                                        {% elif notice.priority == 'high' %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                        {{ notice.priority|title }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <p class="text-gray-500 text-sm">No notices created</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- System Alerts -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">System Alerts</h3>
+                    </div>
+                    <div class="p-6">
+                        {% if system_alerts %}
+                            {% for alert in system_alerts %}
+                            <div class="border-b border-gray-200 pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mt-0.5">
+                                        <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-gray-900">{{ alert.message }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">{{ alert.timestamp }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <p class="text-gray-500 text-sm">No system alerts</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -219,52 +710,41 @@
     </div>
 </div>
 
-<!-- Add Flagged Aadhaar Modal -->
-<div id="add-flagged-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-    <div class="fixed inset-0 bg-black opacity-50"></div>
-    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative z-10">
-        <div class="text-center mb-4">
-            <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
-            <h3 class="text-xl font-bold text-gray-900">Add Flagged Aadhaar</h3>
-            <p class="text-gray-600">Enter the Aadhaar number to flag in the system.</p>
-        </div>
-        
-        <div class="mb-4">
-            <label for="aadhaar-input" class="block text-sm font-medium text-gray-700 mb-2">Aadhaar Number *</label>
-            <input type="text" id="aadhaar-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                   placeholder="Enter 12-digit Aadhaar number" maxlength="12">
-        </div>
-        
-        <div class="mb-4">
-            <label for="reason-input" class="block text-sm font-medium text-gray-700 mb-2">Reason for Flagging *</label>
-            <textarea id="reason-input" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="Enter reason for flagging this Aadhaar number"></textarea>
-        </div>
-        
-        <div class="flex justify-between">
-            <button id="cancel-add" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                <i class="fas fa-times mr-2"></i>Cancel
+<!-- User Details Modal -->
+<div id="user-details-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-lg font-semibold text-gray-900">User Details</h3>
+            <button onclick="closeModal('user-details-modal')" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
             </button>
-            <button id="confirm-add" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                <i class="fas fa-check mr-2"></i>Add to Flagged List
+        </div>
+        <div id="user-details-content" class="py-4">
+            <!-- Content will be loaded via AJAX -->
+        </div>
+        <div class="flex justify-end pt-4 border-t">
+            <button onclick="closeModal('user-details-modal')" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 mr-2">
+                Close
             </button>
         </div>
     </div>
 </div>
 
-<!-- Success Modal -->
-<div id="success-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-    <div class="fixed inset-0 bg-black opacity-50"></div>
-    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative z-10">
-        <div class="text-center mb-4">
-            <i id="success-icon" class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
-            <h3 class="text-xl font-bold text-gray-900" id="success-title">Success!</h3>
-            <p class="text-gray-600" id="success-message">Operation completed successfully.</p>
+<!-- Agency Details Modal -->
+<div id="agency-details-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-lg font-semibold text-gray-900">Agency Details</h3>
+            <button onclick="closeModal('agency-details-modal')" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        
-        <div class="flex justify-center">
-            <button id="close-modal" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <i class="fas fa-check mr-2"></i>OK
+        <div id="agency-details-content" class="py-4">
+            <!-- Content will be loaded via AJAX -->
+        </div>
+        <div class="flex justify-end pt-4 border-t">
+            <button onclick="closeModal('agency-details-modal')" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 mr-2">
+                Close
             </button>
         </div>
     </div>
@@ -274,162 +754,218 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const addFlaggedBtn = document.getElementById('add-flagged-btn');
-    const addFlaggedModal = document.getElementById('add-flagged-modal');
-    const cancelAdd = document.getElementById('cancel-add');
-    const confirmAdd = document.getElementById('confirm-add');
-    const removeFlaggedBtns = document.querySelectorAll('.remove-flagged-btn');
-    const successModal = document.getElementById('success-modal');
-    const closeModal = document.getElementById('close-modal');
-    const successIcon = document.getElementById('success-icon');
-    const successTitle = document.getElementById('success-title');
-    const successMessage = document.getElementById('success-message');
+    // Initialize the first tab as active
+    showUserTab('pending');
     
-    // Format Aadhaar number as user types
-    const aadhaarInput = document.getElementById('aadhaar-input');
-    aadhaarInput.addEventListener('input', function() {
-        // Remove any non-digit characters
-        let value = this.value.replace(/\D/g, '');
-        
-        // Limit to 12 digits
-        if (value.length > 12) {
-            value = value.substring(0, 12);
-        }
-        
-        this.value = value;
-    });
+    // Send Notification Form
+    const sendNotificationForm = document.getElementById('send-notification-form');
+    const notificationAlert = document.getElementById('notification-alert');
     
-    // Show add flagged modal
-    addFlaggedBtn.addEventListener('click', function() {
-        addFlaggedModal.classList.remove('hidden');
-        aadhaarInput.focus();
-    });
-    
-    // Cancel add
-    cancelAdd.addEventListener('click', function() {
-        addFlaggedModal.classList.add('hidden');
-        aadhaarInput.value = '';
-        document.getElementById('reason-input').value = '';
-    });
-    
-    // Confirm add
-    confirmAdd.addEventListener('click', async function() {
-        const aadhaar = aadhaarInput.value.trim();
-        const reason = document.getElementById('reason-input').value.trim();
+    sendNotificationForm.addEventListener('submit', function(e) {
+        e.preventDefault();
         
-        if (!aadhaar) {
-            alert('Please enter an Aadhaar number');
-            return;
-        }
+        const formData = new FormData(this);
+        const notificationData = {
+            title: formData.get('title'),
+            message: formData.get('message'),
+            target_audience: formData.get('target_audience'),
+            type: formData.get('type'),
+            priority: formData.get('priority')
+        };
         
-        if (!/^\d{12}$/.test(aadhaar)) {
-            alert('Please enter a valid 12-digit Aadhaar number');
-            return;
-        }
+        const submitBtn = document.getElementById('send-notification-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
         
-        if (!reason) {
-            alert('Please provide a reason for flagging');
-            return;
-        }
-        
-        // Show loading state
-        this.disabled = true;
-        this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
-        
-        try {
-            const response = await fetch('/api/add_flagged_aadhaar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    aadhaar,
-                    reason
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                // Hide add modal
-                addFlaggedModal.classList.add('hidden');
-                
-                // Show success modal
-                successIcon.className = 'fas fa-check-circle text-5xl text-green-500 mb-4';
-                successTitle.textContent = 'Aadhaar Flagged';
-                successMessage.textContent = 'The Aadhaar number has been added to the flagged list.';
-                successModal.classList.remove('hidden');
-                
-                // Refresh page after closing modal
-                closeModal.addEventListener('click', function() {
-                    location.reload();
-                }, { once: true });
+        fetch('/api/send_notification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(notificationData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(notificationAlert, data.message, 'success');
+                sendNotificationForm.reset();
             } else {
-                alert(result.message || 'Failed to add Aadhaar to flagged list');
+                showAlert(notificationAlert, data.message, 'error');
             }
-        } catch (error) {
-            console.error('Add flagged Aadhaar error:', error);
-            alert('An error occurred while adding the Aadhaar to the flagged list. Please try again.');
-        } finally {
-            // Reset button state
-            this.disabled = false;
-            this.innerHTML = '<i class="fas fa-check mr-2"></i>Add to Flagged List';
-        }
-    });
-    
-    // Remove flagged Aadhaar
-    removeFlaggedBtns.forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const aadhaar = this.dataset.aadhaar;
-            
-            if (!confirm('Are you sure you want to remove this Aadhaar number from the flagged list?')) {
-                return;
-            }
-            
-            // Show loading state
-            this.disabled = true;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            
-            try {
-                const response = await fetch('/api/remove_flagged_aadhaar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ aadhaar })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Show success modal
-                    successIcon.className = 'fas fa-check-circle text-5xl text-green-500 mb-4';
-                    successTitle.textContent = 'Aadhaar Removed';
-                    successMessage.textContent = 'The Aadhaar number has been removed from the flagged list.';
-                    successModal.classList.remove('hidden');
-                    
-                    // Refresh page after closing modal
-                    closeModal.addEventListener('click', function() {
-                        location.reload();
-                    }, { once: true });
-                } else {
-                    alert(result.message || 'Failed to remove Aadhaar from flagged list');
-                }
-            } catch (error) {
-                console.error('Remove flagged Aadhaar error:', error);
-                alert('An error occurred while removing the Aadhaar from the flagged list. Please try again.');
-            } finally {
-                // Reset button state
-                this.disabled = false;
-                this.innerHTML = 'Remove';
-            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert(notificationAlert, 'An error occurred while sending the notification.', 'error');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Send Notification';
         });
     });
     
-    // Close success modal
-    closeModal.addEventListener('click', function() {
-        successModal.classList.add('hidden');
-    });
+    function showAlert(alertElement, message, type) {
+        alertElement.textContent = message;
+        alertElement.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
+        
+        if (type === 'error') {
+            alertElement.classList.add('bg-red-50', 'text-red-700');
+        } else {
+            alertElement.classList.add('bg-green-50', 'text-green-700');
+        }
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            alertElement.classList.add('hidden');
+        }, 5000);
+    }
 });
+
+function showUserTab(tabName) {
+    // Hide all tab contents and deactivate all tabs
+    document.querySelectorAll('.user-tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    document.querySelectorAll('.user-tab').forEach(tab => {
+        tab.classList.remove('border-blue-500', 'text-blue-600');
+        tab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+    });
+    
+    // Show the selected tab content and activate the tab
+    document.getElementById(`${tabName}-tab-content`).classList.remove('hidden');
+    document.getElementById(`${tabName}-tab`).classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+    document.getElementById(`${tabName}-tab`).classList.add('border-blue-500', 'text-blue-600');
+}
+
+function showUserDetails(username) {
+    fetch(`/api/get_user_details?username=${username}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('user-details-content').innerHTML = data.html;
+                document.getElementById('user-details-modal').classList.remove('hidden');
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load user details');
+        });
+}
+
+function showAgencyDetails(agencyCode) {
+    fetch(`/api/get_agency_details?agency_code=${agencyCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('agency-details-content').innerHTML = data.html;
+                document.getElementById('agency-details-modal').classList.remove('hidden');
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load agency details');
+        });
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+function activateUser(username) {
+    if (confirm('Are you sure you want to activate this user?')) {
+        fetch('/api/activate_user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username: username })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while activating the user.');
+        });
+    }
+}
+
+function deactivateUser(username) {
+    if (confirm('Are you sure you want to deactivate this user?')) {
+        fetch('/api/deactivate_user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username: username })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deactivating the user.');
+        });
+    }
+}
+
+function suspendAgency(agencyCode) {
+    if (confirm('Are you sure you want to suspend this agency? All associated users will be deactivated.')) {
+        fetch('/api/suspend_agency', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ agency_code: agencyCode })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while suspending the agency.');
+        });
+    }
+}
+
+function exportVisitors() {
+    fetch('/api/export_visitors')
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'visitors_export.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to export visitors');
+        });
+}
 </script>
 {% endblock %}

@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}Agency Registration - Pass4Port{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="text-center mb-8">
+            <div class="flex items-center justify-center">
+                <div class="bg-blue-600 p-3 rounded-lg">
+                    <i class="fas fa-building text-white text-2xl"></i>
+                </div>
+            </div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Register Your Agency
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Join the Pass4Port system as an authorized agency
+            </p>
+        </div>
+        
+        <div id="registration-form" class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div id="registration-alert" class="hidden rounded-md p-4 mb-4"></div>
+            
+            <form id="agency-register-form" class="space-y-6">
+                <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                    <!-- Agency Information -->
+                    <div class="sm:col-span-2">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Agency Information</h3>
+                    </div>
+                    
+                    <div>
+                        <label for="agencyName" class="block text-sm font-medium text-gray-700">Agency Name *</label>
+                        <div class="mt-1">
+                            <input type="text" name="agencyName" id="agencyName" required 
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="agencyType" class="block text-sm font-medium text-gray-700">Agency Type *</label>
+                        <div class="mt-1">
+                            <select name="agencyType" id="agencyType" required 
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="">Select agency type</option>
+                                <option value="Government">Government Agency</option>
+                                <option value="Private">Private Company</option>
+                                <option value="NGO">Non-Governmental Organization</option>
+                                <option value="Educational">Educational Institution</option>
+                                <option value="Healthcare">Healthcare Organization</option>
+                                <option value="IT Services">IT Services</option>
+                                <option value="Consulting">Consulting</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="licenseNumber" class="block text-sm font-medium text-gray-700">License/Registration Number</label>
+                        <div class="mt-1">
+                            <input type="text" name="licenseNumber" id="licenseNumber" 
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="website" class="block text-sm font-medium text-gray-700">Website</label>
+                        <div class="mt-1">
+                            <input type="url" name="website" id="website" placeholder="https://example.com"
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="sm:col-span-2">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4 mt-6">Contact Information</h3>
+                    </div>
+
+                    <div>
+                        <label for="contactPerson" class="block text-sm font-medium text-gray-700">Contact Person *</label>
+                        <div class="mt-1">
+                            <input type="text" name="contactPerson" id="contactPerson" required 
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="contactEmail" class="block text-sm font-medium text-gray-700">Contact Email *</label>
+                        <div class="mt-1">
+                            <input type="email" name="contactEmail" id="contactEmail" required 
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="contactPhone" class="block text-sm font-medium text-gray-700">Contact Phone *</label>
+                        <div class="mt-1">
+                            <input type="tel" name="contactPhone" id="contactPhone" required 
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="address" class="block text-sm font-medium text-gray-700">Address *</label>
+                        <div class="mt-1">
+                            <textarea name="address" id="address" rows="3" required 
+                                      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Agency Details -->
+                    <div class="sm:col-span-2">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4 mt-6">Agency Details</h3>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <div class="mt-1">
+                            <textarea name="description" id="description" rows="4" 
+                                      placeholder="Brief description of your agency and services"
+                                      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Locations/Areas You Want Access To</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="locationsAccess" value="Building A" class="mr-2">
+                                <span class="text-sm">Building A</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="locationsAccess" value="Building B" class="mr-2">
+                                <span class="text-sm">Building B</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="locationsAccess" value="Conference Hall" class="mr-2">
+                                <span class="text-sm">Conference Hall</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="locationsAccess" value="Meeting Rooms" class="mr-2">
+                                <span class="text-sm">Meeting Rooms</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="locationsAccess" value="Executive Floor" class="mr-2">
+                                <span class="text-sm">Executive Floor</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="locationsAccess" value="Cafeteria" class="mr-2">
+                                <span class="text-sm">Cafeteria</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="locationsAccess" value="Parking Area" class="mr-2">
+                                <span class="text-sm">Parking Area</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="locationsAccess" value="Reception" class="mr-2">
+                                <span class="text-sm">Reception</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="expiryDate" class="block text-sm font-medium text-gray-700">Access Expiry Date *</label>
+                        <div class="mt-1">
+                            <input type="date" name="expiryDate" id="expiryDate" required 
+                                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">When should your agency's access expire?</p>
+                    </div>
+                </div>
+
+                <div class="border-t pt-6">
+                    <div class="flex items-center">
+                        <input id="terms" name="terms" type="checkbox" required class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <label for="terms" class="ml-2 block text-sm text-gray-900">
+                            I agree to the <a href="#" class="text-blue-600 hover:text-blue-500">Terms and Conditions</a> and <a href="#" class="text-blue-600 hover:text-blue-500">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" id="register-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Register Agency
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">
+                            Already have an agency account?
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <a href="{{ url_for('login') }}" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Sign in to existing account
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div id="registration-success" class="hidden bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center">
+            <div class="rounded-full bg-green-100 p-3 mx-auto w-16 h-16 flex items-center justify-center">
+                <i class="fas fa-check-circle text-green-600 text-3xl"></i>
+            </div>
+            <h3 class="mt-4 text-xl font-medium text-gray-900">Registration Submitted!</h3>
+            <p class="mt-2 text-gray-600">Your agency registration has been submitted for review.</p>
+            <p class="mt-2 text-gray-600">Agency Code: <span id="agency-code" class="font-semibold text-blue-600"></span></p>
+            <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-700">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Please save your agency code. You'll need it for employee registrations and future reference.
+                </p>
+            </div>
+            <div class="mt-6">
+                <a href="{{ url_for('login') }}" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Continue to Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const agencyRegisterForm = document.getElementById('agency-register-form');
+    const registrationAlert = document.getElementById('registration-alert');
+    const registrationForm = document.getElementById('registration-form');
+    const registrationSuccess = document.getElementById('registration-success');
+    const agencyCodeSpan = document.getElementById('agency-code');
+    const expiryDateInput = document.getElementById('expiryDate');
+    
+    // Set minimum date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    expiryDateInput.min = tomorrow.toISOString().split('T')[0];
+    
+    // Set default expiry date to 1 year from now
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+    expiryDateInput.value = oneYearFromNow.toISOString().split('T')[0];
+    
+    // Handle form submission
+    agencyRegisterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validate form
+        const requiredFields = ['agencyName', 'agencyType', 'contactPerson', 'contactEmail', 'contactPhone', 'address', 'expiryDate'];
+        let isValid = true;
+        
+        for (const field of requiredFields) {
+            const input = document.getElementById(field);
+            if (!input.value.trim()) {
+                showAlert(`${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`, 'error');
+                input.focus();
+                isValid = false;
+                break;
+            }
+        }
+        
+        if (!isValid) return;
+        
+        // Check if terms are accepted
+        if (!document.getElementById('terms').checked) {
+            showAlert('Please accept the terms and conditions', 'error');
+            return;
+        }
+        
+        // Check if at least one location is selected
+        const selectedLocations = document.querySelectorAll('input[name="locationsAccess"]:checked');
+        if (selectedLocations.length === 0) {
+            showAlert('Please select at least one location for access', 'error');
+            return;
+        }
+        
+        // Disable submit button and show loading state
+        const registerBtn = document.getElementById('register-btn');
+        registerBtn.disabled = true;
+        registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Registering...';
+        
+        // Prepare form data
+        const formData = new FormData(this);
+        
+        // Submit form
+        fetch('/register_agency', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                registrationForm.classList.add('hidden');
+                registrationSuccess.classList.remove('hidden');
+                agencyCodeSpan.textContent = data.agency_code;
+            } else {
+                // Show error message
+                showAlert(data.message, 'error');
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = 'Register Agency';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred. Please try again.', 'error');
+            registerBtn.disabled = false;
+            registerBtn.innerHTML = 'Register Agency';
+        });
+    });
+    
+    // Show alert message
+    function showAlert(message, type) {
+        registrationAlert.textContent = message;
+        registrationAlert.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
+        
+        if (type === 'error') {
+            registrationAlert.classList.add('bg-red-50', 'text-red-700');
+        } else {
+            registrationAlert.classList.add('bg-green-50', 'text-green-700');
+        }
+        
+        // Scroll to alert
+        registrationAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+</script>
+{% endblock %}

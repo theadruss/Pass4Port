@@ -26,6 +26,7 @@
             width: 100%;
             max-width: 400px;
             margin: 0 auto;
+            display: none; /* Initially hidden */
         }
         
         .webcam-overlay {
@@ -59,6 +60,15 @@
         
         .pulse-animation {
             animation: pulse 1.5s infinite;
+        }
+
+        .notification-item.unread {
+            background-color: #EBF8FF;
+            border-left: 4px solid #3182CE;
+        }
+
+        .dropdown-content {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
     </style>
     {% block head %}{% endblock %}
@@ -111,7 +121,7 @@
                 if (data.success) {
                     const notificationElement = document.getElementById(`notification-${notificationId}`);
                     if (notificationElement) {
-                        notificationElement.classList.remove('bg-blue-50');
+                        notificationElement.classList.remove('bg-blue-50', 'unread');
                         notificationElement.classList.add('bg-white');
                     }
                     
@@ -135,7 +145,7 @@
                 if (data.success) {
                     const notifications = document.querySelectorAll('.notification-item');
                     notifications.forEach(notification => {
-                        notification.classList.remove('bg-blue-50');
+                        notification.classList.remove('bg-blue-50', 'unread');
                         notification.classList.add('bg-white');
                     });
                     
@@ -177,6 +187,170 @@
                 }
             }
         }
+
+        // Initialize notification and settings dropdowns
+        document.addEventListener('DOMContentLoaded', function() {
+            // Notification dropdown functionality
+            const notificationBtn = document.getElementById('notification-btn');
+            const notificationDropdown = document.getElementById('notification-dropdown');
+            
+            if (notificationBtn && notificationDropdown) {
+                notificationBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationDropdown.classList.toggle('hidden');
+                    // Close settings dropdown if open
+                    const settingsDropdown = document.getElementById('settings-dropdown');
+                    if (settingsDropdown) {
+                        settingsDropdown.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Settings dropdown functionality
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsDropdown = document.getElementById('settings-dropdown');
+            
+            if (settingsBtn && settingsDropdown) {
+                settingsBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    settingsDropdown.classList.toggle('hidden');
+                    // Close notification dropdown if open
+                    if (notificationDropdown) {
+                        notificationDropdown.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(event) {
+                if (notificationDropdown && !notificationBtn.contains(event.target) && 
+                    !notificationDropdown.contains(event.target)) {
+                    notificationDropdown.classList.add('hidden');
+                }
+                
+                if (settingsDropdown && !settingsBtn.contains(event.target) && 
+                    !settingsDropdown.contains(event.target)) {
+                    settingsDropdown.classList.add('hidden');
+                }
+            });
+        });
+
+        // Add webcam capture functions
+        let currentStream = null;
+        let capturedPhotoData = null;
+
+        function startCamera() {
+            const video = document.getElementById('webcam');
+            const startBtn = document.getElementById('start-camera');
+            const captureBtn = document.getElementById('capture-photo');
+            const retakeBtn = document.getElementById('retake-photo');
+            
+            if (!video) return;
+            
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: 640, 
+                    height: 480,
+                    facingMode: 'user'
+                } 
+            })
+            .then(function(stream) {
+                currentStream = stream;
+                video.srcObject = stream;
+                video.style.display = 'block';
+                startBtn.style.display = 'none';
+                captureBtn.style.display = 'inline-block';
+                
+                // Show webcam container
+                const container = document.querySelector('.webcam-container');
+                if (container) {
+                    container.style.display = 'block';
+                }
+            })
+            .catch(function(err) {
+                console.error('Error accessing camera:', err);
+                alert('Unable to access camera. Please check permissions.');
+            });
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('photo-canvas');
+            const preview = document.getElementById('photo-preview');
+            const captureBtn = document.getElementById('capture-photo');
+            const retakeBtn = document.getElementById('retake-photo');
+            
+            if (!video || !canvas) return;
+            
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw the video frame to canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Get the image data
+            capturedPhotoData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Show preview
+            if (preview) {
+                preview.src = capturedPhotoData;
+                preview.style.display = 'block';
+            }
+            
+            // Hide video and show retake button
+            video.style.display = 'none';
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'inline-block';
+            
+            // Stop camera stream
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            
+            // Update hidden input if exists
+            const photoInput = document.getElementById('photoData');
+            if (photoInput) {
+                photoInput.value = capturedPhotoData;
+            }
+        }
+
+        function retakePhoto() {
+            const video = document.getElementById('webcam');
+            const preview = document.getElementById('photo-preview');
+            const captureBtn = document.getElementById('capture-photo');
+            const retakeBtn = document.getElementById('retake-photo');
+            
+            // Hide preview
+            if (preview) {
+                preview.style.display = 'none';
+            }
+            
+            // Reset buttons
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'none';
+            
+            // Clear captured data
+            capturedPhotoData = null;
+            const photoInput = document.getElementById('photoData');
+            if (photoInput) {
+                photoInput.value = '';
+            }
+            
+            // Restart camera
+            startCamera();
+        }
+
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+        }
+
+        // Stop camera when page unloads
+        window.addEventListener('beforeunload', stopCamera);
     </script>
     {% block scripts %}{% endblock %}
 </body>

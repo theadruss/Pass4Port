@@ -1,0 +1,666 @@
+{% extends "base.html" %}
+
+{% block title %}Agency Dashboard - Pass4Port{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white border-b shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-purple-600 p-2 rounded-lg">
+                        <i class="fas fa-building text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">{{ agency.agency_name if agency else 'Agency Dashboard' }}</h1>
+                        <p class="text-sm text-gray-600">{{ agency.agency_code if agency else 'Agency Management Panel' }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Notification Icon -->
+                    <div class="relative">
+                        <button id="notification-btn" class="p-2 text-gray-600 hover:text-gray-900 relative">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_count > 0 %}
+                            <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ unread_count }}</span>
+                            {% endif %}
+                        </button>
+                        <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 dropdown-content">
+                            <div class="p-3 border-b">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-semibold">Notifications</h3>
+                                    <button onclick="markAllNotificationsRead()" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                                </div>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto">
+                                {% if notifications %}
+                                    {% for notification in notifications %}
+                                    <div id="notification-{{ notification.id }}" class="notification-item p-3 border-b hover:bg-gray-50 {% if notification.is_read == 0 %}bg-blue-50 unread{% endif %}">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mt-0.5">
+                                                <i class="fas fa-{{ notification.icon }} {% if notification.type == 'success' %}text-green-500{% elif notification.type == 'warning' %}text-yellow-500{% elif notification.type == 'error' %}text-red-500{% else %}text-blue-500{% endif %}"></i>
+                                            </div>
+                                            <div class="ml-3 w-0 flex-1">
+                                                <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
+                                                <p class="text-sm text-gray-500">{{ notification.message }}</p>
+                                                <p class="text-xs text-gray-400 mt-1">{{ notification.created_at }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <div class="p-4 text-center text-gray-500">No notifications</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Settings Icon -->
+                    <div class="relative">
+                        <button id="settings-btn" class="p-2 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <div id="settings-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 dropdown-content">
+                            <div class="py-1">
+                                <a href="{{ url_for('profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user mr-2"></i>Profile
+                                </a>
+                                <a href="{{ url_for('settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-cog mr-2"></i>Settings
+                                </a>
+                                <div class="border-t border-gray-100"></div>
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Agency Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="bg-blue-100 p-3 rounded-lg">
+                        <i class="fas fa-users text-blue-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Total Workers</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.total_workers }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="bg-green-100 p-3 rounded-lg">
+                        <i class="fas fa-user-check text-green-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Active Workers</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.active_workers }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="bg-yellow-100 p-3 rounded-lg">
+                        <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Pending Requests</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.pending_requests }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="bg-purple-100 p-3 rounded-lg">
+                        <i class="fas fa-id-card text-purple-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Active Passes</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.active_passes }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="bg-red-100 p-3 rounded-lg">
+                        <i class="fas fa-ban text-red-600 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600">Revoked Passes</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.revoked_passes }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Join Requests -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Pending Join Requests</h2>
+                    </div>
+                    <div class="p-6">
+                        {% if join_requests %}
+                            <div class="space-y-4">
+                                {% for request in join_requests %}
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
+                                                {% if request.photo_file and request.photo_file != 'placeholder.jpg' %}
+                                                <img src="{{ url_for('static', filename='uploads/' + request.photo_file) }}" alt="Profile" class="w-full h-full object-cover">
+                                                {% else %}
+                                                <div class="w-full h-full flex items-center justify-center">
+                                                    <i class="fas fa-user text-gray-400"></i>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h4 class="font-medium text-gray-900">{{ request.name }}</h4>
+                                                <p class="text-sm text-gray-500">{{ request.email }}</p>
+                                                <p class="text-sm text-gray-500">{{ request.phone }}</p>
+                                                <p class="text-xs text-gray-400">Applied: {{ request.created_at }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button onclick="approveJoinRequest('{{ request.user_id }}')" 
+                                                    class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                                                <i class="fas fa-check mr-1"></i>Approve
+                                            </button>
+                                            <button onclick="rejectJoinRequest('{{ request.user_id }}')" 
+                                                    class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700">
+                                                <i class="fas fa-times mr-1"></i>Reject
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                        <p class="text-gray-500 text-center py-8">No pending join requests</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Issue Pass -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Issue Worker Pass</h2>
+                    </div>
+                    <div class="p-6">
+                        <div id="pass-alert" class="hidden rounded-md p-4 mb-4"></div>
+                        <form id="issue-pass-form" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="worker-select" class="block text-sm font-medium text-gray-700 mb-1">Select Worker</label>
+                                    <select id="worker-select" name="worker_id" required 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Select a worker</option>
+                                        {% for worker in active_workers %}
+                                        <option value="{{ worker.user_id }}">{{ worker.name }} ({{ worker.user_id }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="pass-type" class="block text-sm font-medium text-gray-700 mb-1">Pass Type</label>
+                                    <select id="pass-type" name="pass_type" required 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="daily">Daily Pass</option>
+                                        <option value="weekly">Weekly Pass</option>
+                                        <option value="monthly">Monthly Pass</option>
+                                        <option value="temporary">Temporary Pass</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="valid-from" class="block text-sm font-medium text-gray-700 mb-1">Valid From</label>
+                                    <input type="date" id="valid-from" name="valid_from" required 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                
+                                <div>
+                                    <label for="valid-until" class="block text-sm font-medium text-gray-700 mb-1">Valid Until</label>
+                                    <input type="date" id="valid-until" name="valid_until" required 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                
+                                <div class="md:col-span-2">
+                                    <label for="access-areas" class="block text-sm font-medium text-gray-700 mb-1">Access Areas</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        {% if agency and agency.locations_access %}
+                                            {% for location in agency.locations_access %}
+                                            <label class="flex items-center">
+                                                <input type="checkbox" name="access_areas" value="{{ location }}" class="mr-2">
+                                                <span class="text-sm">{{ location }}</span>
+                                            </label>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="md:col-span-2">
+                                    <label for="purpose" class="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+                                    <textarea id="purpose" name="purpose" rows="3" 
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                              placeholder="Purpose of the pass"></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end">
+                                <button type="submit" id="issue-pass-btn" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                    <i class="fas fa-id-card mr-2"></i>Issue Pass
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Active Passes -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h2 class="text-lg font-semibold text-gray-800">Active Passes</h2>
+                    </div>
+                    <div class="p-6">
+                        {% if active_passes %}
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Worker</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pass ID</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Until</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for pass in active_passes %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="w-8 h-8 rounded-full overflow-hidden bg-gray-200 mr-3">
+                                                        {% if pass.photo_file and pass.photo_file != 'placeholder.jpg' %}
+                                                        <img src="{{ url_for('static', filename='uploads/' + pass.photo_file) }}" alt="Profile" class="w-full h-full object-cover">
+                                                        {% else %}
+                                                        <div class="w-full h-full flex items-center justify-center">
+                                                            <i class="fas fa-user text-gray-400 text-xs"></i>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-sm font-medium text-gray-900">{{ pass.worker_name }}</div>
+                                                        <div class="text-sm text-gray-500">{{ pass.worker_id }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ pass.pass_id }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    {{ pass.pass_type|title }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ pass.valid_until }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                                    {% if pass.status == 'active' %}bg-green-100 text-green-800
+                                                    {% elif pass.status == 'expired' %}bg-red-100 text-red-800
+                                                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                                    {{ pass.status|title }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                                <button onclick="viewPass('{{ pass.pass_id }}')" class="text-blue-600 hover:text-blue-900">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button onclick="downloadPass('{{ pass.pass_id }}')" class="text-green-600 hover:text-green-900">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                                <button onclick="revokePass('{{ pass.pass_id }}')" class="text-red-600 hover:text-red-900">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                        <p class="text-gray-500 text-center py-8">No active passes</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Agency Info -->
+                {% if agency %}
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">Agency Information</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Agency Name</p>
+                                <p class="text-sm text-gray-900">{{ agency.agency_name }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Agency ID</p>
+                                <p class="text-sm text-gray-900">{{ agency.agency_code }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Type</p>
+                                <p class="text-sm text-gray-900">{{ agency.agency_type }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Status</p>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    {% if agency.status == 'approved' %}bg-green-100 text-green-800
+                                    {% elif agency.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                    {{ agency.status|title }}
+                                </span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Expires</p>
+                                <p class="text-sm text-gray-900">{{ agency.expiry_date }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
+                    </div>
+                    <div class="p-6 space-y-2">
+                        <button onclick="document.getElementById('worker-select').focus()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-center block text-sm">
+                            <i class="fas fa-id-card mr-2"></i>Issue New Pass
+                        </button>
+                        <button onclick="exportWorkerList()" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 text-center block text-sm">
+                            <i class="fas fa-download mr-2"></i>Export Worker List
+                        </button>
+                        <button onclick="viewAllPasses()" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 text-center block text-sm">
+                            <i class="fas fa-list mr-2"></i>View All Passes
+                        </button>
+                        <button onclick="generateReport()" class="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 text-center block text-sm">
+                            <i class="fas fa-chart-bar mr-2"></i>Generate Report
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">Recent Activity</h3>
+                    </div>
+                    <div class="p-6">
+                        {% if recent_activities %}
+                            <div class="space-y-3">
+                                {% for activity in recent_activities %}
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-{{ activity.icon }} text-gray-400"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-900">{{ activity.description }}</p>
+                                        <p class="text-xs text-gray-500">{{ activity.timestamp }}</p>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                        <p class="text-gray-500 text-sm">No recent activity</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pass View Modal -->
+<div id="pass-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Worker Pass</h3>
+            <button onclick="closePassModal()" class="text-gray-400 hover:text-gray-500">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="pass-content">
+            <!-- Pass content will be loaded here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('valid-from').value = today;
+    
+    // Set default valid until based on pass type
+    document.getElementById('pass-type').addEventListener('change', function() {
+        const passType = this.value;
+        const validFrom = new Date(document.getElementById('valid-from').value);
+        let validUntil = new Date(validFrom);
+        
+        switch(passType) {
+            case 'daily':
+                validUntil.setDate(validUntil.getDate() + 1);
+                break;
+            case 'weekly':
+                validUntil.setDate(validUntil.getDate() + 7);
+                break;
+            case 'monthly':
+                validUntil.setMonth(validUntil.getMonth() + 1);
+                break;
+            case 'temporary':
+                validUntil.setDate(validUntil.getDate() + 3);
+                break;
+        }
+        
+        document.getElementById('valid-until').value = validUntil.toISOString().split('T')[0];
+    });
+    
+    // Issue pass form
+    document.getElementById('issue-pass-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const passData = {
+            worker_id: formData.get('worker_id'),
+            pass_type: formData.get('pass_type'),
+            valid_from: formData.get('valid_from'),
+            valid_until: formData.get('valid_until'),
+            access_areas: formData.getAll('access_areas'),
+            purpose: formData.get('purpose')
+        };
+        
+        const submitBtn = document.getElementById('issue-pass-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Issuing...';
+        
+        fetch('/api/issue_pass', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(passData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(document.getElementById('pass-alert'), data.message, 'success');
+                document.getElementById('issue-pass-form').reset();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showAlert(document.getElementById('pass-alert'), data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert(document.getElementById('pass-alert'), 'An error occurred while issuing the pass.', 'error');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-id-card mr-2"></i>Issue Pass';
+        });
+    });
+});
+
+function approveJoinRequest(userId) {
+    if (confirm('Are you sure you want to approve this join request?')) {
+        fetch('/api/approve_join_request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ user_id: userId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while approving the request.');
+        });
+    }
+}
+
+function rejectJoinRequest(userId) {
+    const reason = prompt('Please provide a reason for rejection:');
+    if (reason) {
+        fetch('/api/reject_join_request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ user_id: userId, reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while rejecting the request.');
+        });
+    }
+}
+
+function viewPass(passId) {
+    fetch(`/api/get_pass/${passId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('pass-content').innerHTML = data.html;
+            document.getElementById('pass-modal').classList.remove('hidden');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while loading the pass.');
+    });
+}
+
+function downloadPass(passId) {
+    window.open(`/api/download_pass/${passId}`, '_blank');
+}
+
+function revokePass(passId) {
+    const reason = prompt('Please provide a reason for revoking this pass:');
+    if (reason) {
+        fetch('/api/revoke_pass', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ pass_id: passId, reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while revoking the pass.');
+        });
+    }
+}
+
+function closePassModal() {
+    document.getElementById('pass-modal').classList.add('hidden');
+}
+
+function exportWorkerList() {
+    window.open('/api/export_workers', '_blank');
+}
+
+function viewAllPasses() {
+    window.location.href = '/agency/passes';
+}
+
+function generateReport() {
+    window.open('/api/agency_report', '_blank');
+}
+
+function showAlert(alertElement, message, type) {
+    alertElement.textContent = message;
+    alertElement.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
+    
+    if (type === 'error') {
+        alertElement.classList.add('bg-red-50', 'text-red-700');
+    } else {
+        alertElement.classList.add('bg-green-50', 'text-green-700');
+    }
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        alertElement.classList.add('hidden');
+    }, 5000);
+}
+</script>
+{% endblock %}

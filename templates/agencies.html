@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Agencies - Pass4Port{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white border-b shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-green-600 p-2 rounded-lg">
+                        <i class="fas fa-building text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Registered Agencies</h1>
+                        <p class="text-sm text-gray-600">Browse approved agencies in the system</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="notification-btn" class="p-2 text-gray-600 hover:text-gray-900 relative">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_count > 0 %}
+                            <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ unread_count }}</span>
+                            {% endif %}
+                        </button>
+                        <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 dropdown-content">
+                            <div class="p-3 border-b">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-semibold">Notifications</h3>
+                                    <button onclick="markAllNotificationsRead()" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                                </div>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto">
+                                {% if notifications %}
+                                    {% for notification in notifications %}
+                                    <div id="notification-{{ notification.id }}" class="notification-item p-3 border-b hover:bg-gray-50 {% if notification.is_read == 0 %}bg-blue-50 unread{% endif %}">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mt-0.5">
+                                                <i class="fas fa-{{ notification.icon }} {% if notification.type == 'success' %}text-green-500{% elif notification.type == 'warning' %}text-yellow-500{% elif notification.type == 'error' %}text-red-500{% else %}text-blue-500{% endif %}"></i>
+                                            </div>
+                                            <div class="ml-3 w-0 flex-1">
+                                                <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
+                                                <p class="text-sm text-gray-500">{{ notification.message }}</p>
+                                                <p class="text-xs text-gray-400 mt-1">{{ notification.created_at }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <div class="p-4 text-center text-gray-500">No notifications</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <button id="settings-btn" class="p-2 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <div id="settings-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 dropdown-content">
+                            <div class="py-1">
+                                <a href="{{ url_for('profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user mr-2"></i>Profile
+                                </a>
+                                <a href="{{ url_for('settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-cog mr-2"></i>Settings
+                                </a>
+                                <div class="border-t border-gray-100"></div>
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('dashboard_' + session.role) }}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Search and Filter -->
+        <div class="bg-white rounded-lg shadow mb-6 p-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div class="flex-1 max-w-lg">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" id="search-agencies" placeholder="Search agencies..." 
+                               class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <select id="filter-type" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Types</option>
+                        <option value="Government">Government</option>
+                        <option value="Private">Private</option>
+                        <option value="NGO">NGO</option>
+                        <option value="Educational">Educational</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="IT Services">IT Services</option>
+                        <option value="Consulting">Consulting</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    {% if session.role == 'admin' %}
+                    <a href="{{ url_for('register_agency') }}" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                        <i class="fas fa-plus mr-2"></i>Add Agency
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Agencies Grid -->
+        <div id="agencies-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for agency in agencies %}
+            <div class="agency-card bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-200" 
+                 data-type="{{ agency.agency_type }}" data-name="{{ agency.agency_name.lower() }}">
+                <div class="p-6">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center">
+                                <div class="bg-blue-100 p-2 rounded-lg">
+                                    <i class="fas fa-building text-blue-600"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-lg font-semibold text-gray-900">{{ agency.agency_name }}</h3>
+                                    <p class="text-sm text-gray-500">{{ agency.agency_type }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Active
+                        </span>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-600 line-clamp-2">{{ agency.description or 'No description available' }}</p>
+                    </div>
+                    
+                    <div class="mt-4 space-y-2">
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="fas fa-user mr-2"></i>
+                            <span>{{ agency.contact_person }}</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="fas fa-envelope mr-2"></i>
+                            <span>{{ agency.contact_email }}</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="fas fa-phone mr-2"></i>
+                            <span>{{ agency.contact_phone }}</span>
+                        </div>
+                        {% if agency.website %}
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="fas fa-globe mr-2"></i>
+                            <a href="{{ agency.website }}" target="_blank" class="text-blue-600 hover:underline">{{ agency.website }}</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Access Locations:</h4>
+                        <div class="flex flex-wrap gap-1">
+                            {% for location in agency.locations_access %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                {{ location }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between text-sm text-gray-500">
+                            <span>Code: <span class="font-mono font-medium">{{ agency.agency_code }}</span></span>
+                            <span>Expires: {{ agency.expiry_date }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex space-x-2">
+                        <button onclick="viewAgencyDetails('{{ agency.agency_code }}')" 
+                                class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                            <i class="fas fa-eye mr-1"></i>View Details
+                        </button>
+                        {% if session.role in ['visitor', 'officer'] %}
+                        <button onclick="requestVisit('{{ agency.agency_code }}')" 
+                                class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                            <i class="fas fa-calendar-plus mr-1"></i>Request Visit
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if not agencies %}
+        <div class="text-center py-12">
+            <div class="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4">
+                <i class="fas fa-building text-gray-400 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No Agencies Found</h3>
+            <p class="text-gray-500">There are no approved agencies in the system yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Agency Details Modal -->
+    <div id="agency-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Agency Details</h3>
+                <button onclick="closeAgencyModal()" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="agency-details-content">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Visit Request Modal -->
+    <div id="visit-request-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Request Agency Visit</h3>
+                <button onclick="closeVisitModal()" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="visit-request-form">
+                <input type="hidden" id="visit-agency-code" name="agency_code">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Department/Location</label>
+                        <select id="visit-department" name="department" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select location</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Visit Date</label>
+                        <input type="date" id="visit-date" name="date" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Visit Time</label>
+                        <input type="time" id="visit-time" name="time" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Purpose of Visit</label>
+                        <textarea id="visit-purpose" name="purpose" rows="3" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex space-x-3">
+                    <button type="button" onclick="closeVisitModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-agencies');
+    const filterType = document.getElementById('filter-type');
+    const agencyCards = document.querySelectorAll('.agency-card');
+    const visitDateInput = document.getElementById('visit-date');
+    
+    // Set minimum date to today
+    if (visitDateInput) {
+        visitDateInput.min = new Date().toISOString().split('T')[0];
+    }
+    
+    // Search and filter functionality
+    function filterAgencies() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedType = filterType.value;
+        
+        agencyCards.forEach(card => {
+            const name = card.dataset.name;
+            const type = card.dataset.type;
+            
+            const matchesSearch = name.includes(searchTerm);
+            const matchesType = !selectedType || type === selectedType;
+            
+            if (matchesSearch && matchesType) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+    
+    searchInput.addEventListener('input', filterAgencies);
+    filterType.addEventListener('change', filterAgencies);
+});
+
+function viewAgencyDetails(agencyCode) {
+    // Show modal
+    document.getElementById('agency-details-modal').classList.remove('hidden');
+    
+    // Load agency details (you can implement this with an API call)
+    const content = document.getElementById('agency-details-content');
+    content.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    
+    // For now, show a placeholder
+    setTimeout(() => {
+        content.innerHTML = `
+            <div class="space-y-4">
+                <p class="text-gray-600">Detailed information for agency ${agencyCode} would be displayed here.</p>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium mb-2">Contact Information</h4>
+                    <p class="text-sm text-gray-600">Full contact details, address, and other relevant information.</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-medium mb-2">Access Permissions</h4>
+                    <p class="text-sm text-gray-600">Detailed list of accessible locations and time restrictions.</p>
+                </div>
+            </div>
+        `;
+    }, 500);
+}
+
+function closeAgencyModal() {
+    document.getElementById('agency-details-modal').classList.add('hidden');
+}
+
+function requestVisit(agencyCode) {
+    // Find agency data
+    const agencyCard = document.querySelector(`[data-name]`);
+    
+    // Show modal
+    document.getElementById('visit-request-modal').classList.remove('hidden');
+    document.getElementById('visit-agency-code').value = agencyCode;
+    
+    // Populate department options (you can get this from agency data)
+    const departmentSelect = document.getElementById('visit-department');
+    departmentSelect.innerHTML = `
+        <option value="">Select location</option>
+        <option value="Reception">Reception</option>
+        <option value="Meeting Room">Meeting Room</option>
+        <option value="Conference Hall">Conference Hall</option>
+        <option value="Executive Office">Executive Office</option>
+    `;
+}
+
+function closeVisitModal() {
+    document.getElementById('visit-request-modal').classList.add('hidden');
+    document.getElementById('visit-request-form').reset();
+}
+
+// Handle visit request form submission
+document.getElementById('visit-request-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const requestData = {
+        agency_code: formData.get('agency_code'),
+        department: formData.get('department'),
+        date: formData.get('date'),
+        time: formData.get('time'),
+        purpose: formData.get('purpose')
+    };
+    
+    fetch('/api/submit_request', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Visit request submitted successfully!');
+            closeVisitModal();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting the request.');
+    });
+});
+</script>
+{% endblock %}

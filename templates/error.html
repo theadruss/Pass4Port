@@ -3,12 +3,55 @@
 {% block title %}Error {{ error_code }} - Pass4Port{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center bg-gray-50">
-    <div class="text-center p-8">
-        <div class="text-6xl font-bold text-red-500 mb-4">{{ error_code }}</div>
-        <h1 class="text-2xl font-bold text-gray-800 mb-4">{{ error_message }}</h1>
-        <p class="text-gray-600 mb-8">Sorry, something went wrong. Please try again or contact support.</p>
-        <a href="{{ url_for('index') }}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Return to Home</a>
+<div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="text-center">
+            <div class="mx-auto h-24 w-24 bg-red-100 rounded-full flex items-center justify-center">
+                {% if error_code == 404 %}
+                <i class="fas fa-search text-red-600 text-3xl"></i>
+                {% elif error_code == 500 %}
+                <i class="fas fa-exclamation-triangle text-red-600 text-3xl"></i>
+                {% else %}
+                <i class="fas fa-times-circle text-red-600 text-3xl"></i>
+                {% endif %}
+            </div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Error {{ error_code }}
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                {{ error_message }}
+            </p>
+        </div>
+        
+        <div class="mt-8 text-center">
+            {% if error_code == 404 %}
+            <p class="text-gray-600 mb-4">The page you're looking for doesn't exist.</p>
+            {% elif error_code == 500 %}
+            <p class="text-gray-600 mb-4">Something went wrong on our end. Please try again later.</p>
+            {% else %}
+            <p class="text-gray-600 mb-4">An unexpected error occurred.</p>
+            {% endif %}
+            
+            <div class="space-y-3">
+                <a href="{{ url_for('index') }}" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-home mr-2"></i>Go to Homepage
+                </a>
+                
+                {% if 'user' in session %}
+                <a href="{{ url_for('dashboard_' + session['role']) }}" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-tachometer-alt mr-2"></i>Go to Dashboard
+                </a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                </a>
+                {% endif %}
+                
+                <button onclick="history.back()" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i class="fas fa-arrow-left mr-2"></i>Go Back
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

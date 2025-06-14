@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Pass4Port{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white border-b shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-600 p-2 rounded-lg">
+                        <i class="fas fa-user text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Profile Settings</h1>
+                        <p class="text-sm text-gray-600">Manage your personal information</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="notification-btn" class="p-2 text-gray-600 hover:text-gray-900 relative">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_count > 0 %}
+                            <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ unread_count }}</span>
+                            {% endif %}
+                        </button>
+                        <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 dropdown-content">
+                            <div class="p-3 border-b">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-semibold">Notifications</h3>
+                                    <button onclick="markAllNotificationsRead()" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                                </div>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto">
+                                {% if notifications %}
+                                    {% for notification in notifications %}
+                                    <div id="notification-{{ notification.id }}" class="notification-item p-3 border-b hover:bg-gray-50 {% if notification.is_read == 0 %}bg-blue-50 unread{% endif %}">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mt-0.5">
+                                                <i class="fas fa-{{ notification.icon }} {% if notification.type == 'success' %}text-green-500{% elif notification.type == 'warning' %}text-yellow-500{% elif notification.type == 'error' %}text-red-500{% else %}text-blue-500{% endif %}"></i>
+                                            </div>
+                                            <div class="ml-3 w-0 flex-1">
+                                                <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
+                                                <p class="text-sm text-gray-500">{{ notification.message }}</p>
+                                                <p class="text-xs text-gray-400 mt-1">{{ notification.created_at }}</p>
+                                            </div>
+                                            <div class="ml-4 flex-shrink-0">
+                                                <button onclick="markNotificationRead('{{ notification.id }}')" class="text-xs text-gray-400 hover:text-gray-500">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <div class="p-4 text-center text-gray-500">No notifications</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <button id="settings-btn" class="p-2 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <div id="settings-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 dropdown-content">
+                            <div class="py-1">
+                                <a href="{{ url_for('profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user mr-2"></i>Profile
+                                </a>
+                                <a href="{{ url_for('settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-cog mr-2"></i>Settings
+                                </a>
+                                <div class="border-t border-gray-100"></div>
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('dashboard_' + session['role']) }}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b">
+                    <h2 class="text-lg font-semibold text-gray-800">Personal Information</h2>
+                    <p class="text-sm text-gray-600">Update your personal details and profile picture</p>
+                </div>
+                
+                <div class="p-6">
+                    <div id="profile-alert" class="hidden rounded-md p-4 mb-6"></div>
+                    
+                    <form id="profile-form" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Profile Photo -->
+                            <div class="md:col-span-2 flex flex-col items-center">
+                                <div class="relative">
+                                    <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg">
+                                        {% if user.photo_file and user.photo_file != 'placeholder.jpg' %}
+                                        <img id="current-photo" src="{{ url_for('static', filename='uploads/' + user.photo_file) }}" alt="Profile Photo" class="w-full h-full object-cover">
+                                        {% else %}
+                                        <div id="current-photo" class="w-full h-full flex items-center justify-center bg-gray-300">
+                                            <i class="fas fa-user text-gray-500 text-4xl"></i>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <button type="button" id="change-photo-btn" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700">
+                                        <i class="fas fa-camera"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Camera Modal -->
+                                <div id="camera-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                                        <div class="flex justify-between items-center mb-4">
+                                            <h3 class="text-lg font-semibold">Update Profile Photo</h3>
+                                            <button type="button" id="close-camera" class="text-gray-400 hover:text-gray-500">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="webcam-container mb-4">
+                                            <video id="webcam" autoplay playsinline width="300" height="225" class="rounded-lg shadow-md w-full"></video>
+                                            <canvas id="canvas" width="300" height="225" class="hidden"></canvas>
+                                            <div id="photo-preview" class="hidden">
+                                                <img id="captured-photo" class="rounded-lg shadow-md w-full" alt="Captured photo">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex justify-center space-x-3">
+                                            <button type="button" id="start-camera" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                                <i class="fas fa-video mr-2"></i>Start Camera
+                                            </button>
+                                            <button type="button" id="capture-photo" class="hidden px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                                <i class="fas fa-camera mr-2"></i>Capture
+                                            </button>
+                                            <button type="button" id="retake-photo" class="hidden px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
+                                                <i class="fas fa-redo mr-2"></i>Retake
+                                            </button>
+                                            <button type="button" id="save-photo" class="hidden px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                                <i class="fas fa-save mr-2"></i>Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <input type="hidden" id="photo-data" name="photoData">
+                            </div>
+                            
+                            <!-- Personal Details -->
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <input type="text" id="name" name="name" value="{{ user.name }}" required 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                <input type="email" id="email" name="email" value="{{ user.email }}" required 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                <input type="tel" id="phone" name="phone" value="{{ user.phone }}" required 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label for="user-id" class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+                                <input type="text" id="user-id" value="{{ user.user_id }}" readonly 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                            </div>
+                            
+                            {% if user.aadhaar %}
+                            <div>
+                                <label for="aadhaar" class="block text-sm font-medium text-gray-700 mb-1">Aadhaar Number</label>
+                                <input type="text" id="aadhaar" value="{{ masked_aadhaar }}" readonly 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                            </div>
+                            {% endif %}
+                            
+                            <div>
+                                <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                <input type="text" id="role" value="{{ user.role|title }}" readonly 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                            </div>
+                        </div>
+                        
+                        <!-- Password Change Section -->
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Change Password</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="current-password" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                                    <input type="password" id="current-password" name="current_password" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                
+                                <div>
+                                    <label for="new-password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                                    <input type="password" id="new-password" name="new_password" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">Leave blank if you don't want to change your password</p>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <a href="{{ url_for('dashboard_' + session['role']) }}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                                Cancel
+                            </a>
+                            <button type="submit" id="save-profile-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                <i class="fas fa-save mr-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const profileForm = document.getElementById('profile-form');
+    const profileAlert = document.getElementById('profile-alert');
+    const saveProfileBtn = document.getElementById('save-profile-btn');
+    
+    // Camera functionality
+    const changePhotoBtn = document.getElementById('change-photo-btn');
+    const cameraModal = document.getElementById('camera-modal');
+    const closeCameraBtn = document.getElementById('close-camera');
+    const startCameraBtn = document.getElementById('start-camera');
+    const capturePhotoBtn = document.getElementById('capture-photo');
+    const retakePhotoBtn = document.getElementById('retake-photo');
+    const savePhotoBtn = document.getElementById('save-photo');
+    const webcam = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const photoPreview = document.getElementById('photo-preview');
+    const capturedPhoto = document.getElementById('captured-photo');
+    const photoDataInput = document.getElementById('photo-data');
+    const currentPhoto = document.getElementById('current-photo');
+    
+    let stream = null;
+    let photoData = null;
+    
+    // Show camera modal
+    changePhotoBtn.addEventListener('click', function() {
+        cameraModal.classList.remove('hidden');
+    });
+    
+    // Close camera modal
+    closeCameraBtn.addEventListener('click', function() {
+        cameraModal.classList.add('hidden');
+        stopCamera();
+    });
+    
+    // Start camera
+    startCameraBtn.addEventListener('click', async function() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 300 },
+                    height: { ideal: 225 },
+                    facingMode: 'user'
+                }, 
+                audio: false 
+            });
+            webcam.srcObject = stream;
+            webcam.classList.remove('hidden');
+            startCameraBtn.classList.add('hidden');
+            capturePhotoBtn.classList.remove('hidden');
+        } catch (err) {
+            console.error('Error accessing camera:', err);
+            showAlert('Unable to access camera. Please ensure you have granted camera permissions.', 'error');
+        }
+    });
+    
+    // Capture photo
+    capturePhotoBtn.addEventListener('click', function() {
+        const context = canvas.getContext('2d');
+        context.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+        photoData = canvas.toDataURL('image/jpeg');
+        capturedPhoto.src = photoData;
+        
+        webcam.classList.add('hidden');
+        photoPreview.classList.remove('hidden');
+        capturePhotoBtn.classList.add('hidden');
+        retakePhotoBtn.classList.remove('hidden');
+        savePhotoBtn.classList.remove('hidden');
+    });
+    
+    // Retake photo
+    retakePhotoBtn.addEventListener('click', function() {
+        webcam.classList.remove('hidden');
+        photoPreview.classList.add('hidden');
+        capturePhotoBtn.classList.remove('hidden');
+        retakePhotoBtn.classList.add('hidden');
+        savePhotoBtn.classList.add('hidden');
+        photoData = null;
+    });
+    
+    // Save photo
+    savePhotoBtn.addEventListener('click', function() {
+        if (photoData) {
+            photoDataInput.value = photoData;
+            // Update current photo preview
+            if (currentPhoto.tagName === 'IMG') {
+                currentPhoto.src = photoData;
+            } else {
+                currentPhoto.innerHTML = `<img src="${photoData}" alt="Profile Photo" class="w-full h-full object-cover">`;
+            }
+        }
+        cameraModal.classList.add('hidden');
+        stopCamera();
+    });
+    
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+        webcam.classList.add('hidden');
+        photoPreview.classList.add('hidden');
+        startCameraBtn.classList.remove('hidden');
+        capturePhotoBtn.classList.add('hidden');
+        retakePhotoBtn.classList.add('hidden');
+        savePhotoBtn.classList.add('hidden');
+    }
+    
+    // Profile form submission
+    profileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        formData.append('name', document.getElementById('name').value);
+        formData.append('email', document.getElementById('email').value);
+        formData.append('phone', document.getElementById('phone').value);
+        formData.append('current_password', document.getElementById('current-password').value);
+        formData.append('new_password', document.getElementById('new-password').value);
+        
+        if (photoDataInput.value) {
+            formData.append('photoData', photoDataInput.value);
+        }
+        
+        // Show loading state
+        saveProfileBtn.disabled = true;
+        saveProfileBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+        
+        fetch('/api/update_profile', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+                // Clear password fields
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value = '';
+                photoDataInput.value = '';
+            } else {
+                showAlert(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred while updating your profile.', 'error');
+        })
+        .finally(() => {
+            saveProfileBtn.disabled = false;
+            saveProfileBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Changes';
+        });
+    });
+    
+    function showAlert(message, type) {
+        profileAlert.textContent = message;
+        profileAlert.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
+        
+        if (type === 'error') {
+            profileAlert.classList.add('bg-red-50', 'text-red-700');
+        } else {
+            profileAlert.classList.add('bg-green-50', 'text-green-700');
+        }
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            profileAlert.classList.add('hidden');
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

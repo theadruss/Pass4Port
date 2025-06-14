@@ -1,346 +1,428 @@
-{% extends "base.html" %}
-
-{% block title %}Register - Pass4Port{% endblock %}
-
-{% block content %}
-<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-2xl mx-auto">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Pass4Port</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .register-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .register-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .role-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .role-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .role-card.selected {
+            border-color: #3B82F6;
+            background-color: #EBF8FF;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .webcam-container {
+            display: none;
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        .webcam-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px dashed #3B82F6;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        
+        #webcam, #photo-preview {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        
+        #photo-canvas {
+            display: none;
+        }
+        
+        .hidden-field {
+            display: none;
+        }
+    </style>
+</head>
+<body class="register-container flex items-center justify-center p-4">
+    <div class="register-card rounded-2xl shadow-2xl p-8 w-full max-w-2xl">
         <div class="text-center mb-8">
-            <div class="flex items-center justify-center">
-                <div class="bg-blue-600 p-3 rounded-lg">
-                    <i class="fas fa-shield-alt text-white text-2xl"></i>
+            <div class="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-user-plus text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Register</h1>
+            <p class="text-gray-600">Create your Pass4Port account</p>
+        </div>
+
+        <form id="registrationForm" class="space-y-6">
+            <!-- Role Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-3">Select Role</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="role-card border-2 border-gray-200 rounded-lg p-4 text-center" onclick="selectRole('visitor')">
+                        <i class="fas fa-user text-2xl text-blue-500 mb-2"></i>
+                        <div class="text-sm font-medium">Visitor</div>
+                    </div>
+                    <div class="role-card border-2 border-gray-200 rounded-lg p-4 text-center" onclick="selectRole('officer')">
+                        <i class="fas fa-user-tie text-2xl text-green-500 mb-2"></i>
+                        <div class="text-sm font-medium">Officer</div>
+                    </div>
+                    <div class="role-card border-2 border-gray-200 rounded-lg p-4 text-center" onclick="selectRole('security')">
+                        <i class="fas fa-shield-alt text-2xl text-yellow-500 mb-2"></i>
+                        <div class="text-sm font-medium">Security</div>
+                    </div>
+                </div>
+                <input type="hidden" name="role" id="role" required>
+                <p class="text-sm text-gray-500 mt-2">Note: Admin accounts cannot be created through registration. Contact existing admin for access.</p>
+            </div>
+
+            <!-- Basic Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user mr-2"></i>Full Name
+                    </label>
+                    <input type="text" id="fullName" name="fullName" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Enter your full name">
+                </div>
+                
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-phone mr-2"></i>Phone Number
+                    </label>
+                    <input type="tel" id="phone" name="phone" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="+91 9876543210">
                 </div>
             </div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                Create your Pass4Port Account
-            </h2>
-            <p class="mt-2 text-center text-sm text-gray-600">
-                Register to access the Visitor Management System
-            </p>
-        </div>
-        
-        <div id="registration-form" class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <div id="registration-alert" class="hidden rounded-md p-4 mb-4"></div>
-            
-            <form id="register-form" class="space-y-6">
-                <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-                    <div>
-                        <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
-                        <div class="mt-1">
-                            <input type="text" name="fullName" id="fullName" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                    </div>
 
-                    <div>
-                        <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
-                        <div class="mt-1">
-                            <input type="tel" name="phone" id="phone" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                    </div>
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-envelope mr-2"></i>Email Address
+                </label>
+                <input type="email" id="email" name="email" required
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       placeholder="your.email@example.com">
+            </div>
 
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
-                        <div class="mt-1">
-                            <input type="email" name="email" id="email" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                        <div class="mt-1">
-                            <input type="text" name="username" id="username" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <div class="mt-1">
-                            <input type="password" name="password" id="password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-                        <div class="mt-1">
-                            <input type="password" name="confirmPassword" id="confirmPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="role" class="block text-sm font-medium text-gray-700">Register as</label>
-                        <div class="mt-1">
-                            <select id="role" name="role" required class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                <option value="visitor">Visitor</option>
-                                <option value="officer">Officer</option>
-                                <option value="security">Security Personnel</option>
-                                <option value="admin">Administrator</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="aadhaar-container" class="sm:col-span-2">
-                        <label for="aadhaar" class="block text-sm font-medium text-gray-700">Aadhaar Number (Required for Visitors)</label>
-                        <div class="mt-1">
-                            <input type="text" name="aadhaar" id="aadhaar" placeholder="12-digit Aadhaar number" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        </div>
-                        <p class="mt-1 text-xs text-gray-500">Format: XXXX XXXX XXXX or XXXXXXXXXXXX</p>
-                    </div>
+            <!-- Account Credentials -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user-circle mr-2"></i>Username
+                    </label>
+                    <input type="text" id="username" name="username" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Choose a username">
                 </div>
+                
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-lock mr-2"></i>Password
+                    </label>
+                    <input type="password" id="password" name="password" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Create a password">
+                </div>
+            </div>
 
-                <div class="sm:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Photo</label>
-                    <div class="webcam-container">
-                        <video id="webcam" autoplay playsinline width="400" height="300" class="rounded-lg shadow-md"></video>
+            <!-- Aadhaar Number (for visitors only) -->
+            <div id="aadhaarField" class="hidden-field">
+                <label for="aadhaar" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-id-card mr-2"></i>Aadhaar Number
+                </label>
+                <input type="text" id="aadhaar" name="aadhaar"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       placeholder="Enter 12-digit Aadhaar number"
+                       pattern="[0-9]{12}"
+                       maxlength="12">
+            </div>
+
+            <!-- Agency Join Option (for visitors) -->
+            <div id="agencyJoinField" class="hidden-field">
+                <label for="agencyId" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-building mr-2"></i>Agency ID (Optional)
+                </label>
+                <input type="text" id="agencyId" name="agencyId"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       placeholder="Enter agency ID to join as worker (optional)">
+                <p class="text-sm text-gray-500 mt-1">Leave blank if you're not joining any agency</p>
+            </div>
+
+            <!-- Photo Capture -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-3">
+                    <i class="fas fa-camera mr-2"></i>Profile Photo
+                </label>
+                
+                <div class="text-center">
+                    <button type="button" id="start-camera" onclick="startCamera()" 
+                            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200">
+                        <i class="fas fa-camera mr-2"></i>Start Camera
+                    </button>
+                    
+                    <div class="webcam-container mt-4">
+                        <video id="webcam" autoplay playsinline></video>
                         <div class="webcam-overlay"></div>
-                        <button type="button" id="capture-btn" class="webcam-capture-btn px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <i class="fas fa-camera mr-2"></i> Capture Photo
-                        </button>
-                    </div>
-                    <canvas id="canvas" width="400" height="300" class="hidden"></canvas>
-                    <div id="photo-preview" class="mt-4 hidden">
-                        <img id="photo" class="rounded-lg shadow-md mx-auto" alt="Captured photo">
-                        <div class="mt-2 flex justify-center">
-                            <button type="button" id="retake-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                                <i class="fas fa-redo mr-2"></i> Retake Photo
+                        <img id="photo-preview" style="display: none;" alt="Captured photo">
+                        <canvas id="photo-canvas"></canvas>
+                        
+                        <div class="mt-4 space-x-3">
+                            <button type="button" id="capture-photo" onclick="capturePhoto()" 
+                                    style="display: none;"
+                                    class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200">
+                                <i class="fas fa-camera mr-2"></i>Capture
+                            </button>
+                            
+                            <button type="button" id="retake-photo" onclick="retakePhoto()" 
+                                    style="display: none;"
+                                    class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition duration-200">
+                                <i class="fas fa-redo mr-2"></i>Retake
                             </button>
                         </div>
                     </div>
-                    <input type="hidden" name="photoData" id="photoData">
                 </div>
+                
+                <input type="hidden" id="photoData" name="photoData">
+            </div>
 
-                <div>
-                    <button type="submit" id="register-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Register
-                    </button>
-                </div>
-            </form>
-            
-            <div class="mt-6">
-                <div class="relative">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white text-gray-500">
-                            Already have an account?
-                        </span>
-                    </div>
-                </div>
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn" 
+                    class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition duration-200 font-medium">
+                <i class="fas fa-user-plus mr-2"></i>Register
+            </button>
+        </form>
 
-                <div class="mt-6">
-                    <a href="{{ url_for('login') }}" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Sign in
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div id="registration-success" class="hidden bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center">
-            <div class="rounded-full bg-green-100 p-3 mx-auto w-16 h-16 flex items-center justify-center">
-                <i class="fas fa-check-circle text-green-600 text-3xl"></i>
-            </div>
-            <h3 class="mt-4 text-xl font-medium text-gray-900" id="success-title">Registration Successful!</h3>
-            <p class="mt-2 text-gray-600" id="success-message">Your account has been created successfully.</p>
-            <p class="mt-2 text-gray-600">Your User ID: <span id="user-id" class="font-semibold"></span></p>
-            <div class="mt-6">
-                <a href="{{ url_for('login') }}" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Proceed to Login
-                </a>
-            </div>
+        <!-- Login Link -->
+        <div class="mt-6 text-center">
+            <p class="text-gray-600 text-sm">Already have an account? 
+                <a href="/login" class="text-blue-600 hover:text-blue-800 font-medium">Login here</a>
+            </p>
         </div>
     </div>
-</div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const registerForm = document.getElementById('register-form');
-    const roleSelect = document.getElementById('role');
-    const aadhaarContainer = document.getElementById('aadhaar-container');
-    const aadhaarInput = document.getElementById('aadhaar');
-    const registrationAlert = document.getElementById('registration-alert');
-    const registrationForm = document.getElementById('registration-form');
-    const registrationSuccess = document.getElementById('registration-success');
-    const userIdSpan = document.getElementById('user-id');
-    const successTitle = document.getElementById('success-title');
-    const successMessage = document.getElementById('success-message');
-    
-    // Webcam elements
-    const video = document.getElementById('webcam');
-    const canvas = document.getElementById('canvas');
-    const photo = document.getElementById('photo');
-    const captureBtn = document.getElementById('capture-btn');
-    const retakeBtn = document.getElementById('retake-btn');
-    const photoPreview = document.getElementById('photo-preview');
-    const photoDataInput = document.getElementById('photoData');
-    
-    // Initialize webcam
-    let stream = null;
-    
-    async function initWebcam() {
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    width: { ideal: 400 },
-                    height: { ideal: 300 },
-                    facingMode: 'user'
-                }, 
-                audio: false 
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-lg p-8 text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-gray-700">Processing registration...</p>
+        </div>
+    </div>
+
+    <script>
+        let currentStream = null;
+        let capturedPhotoData = null;
+
+        function selectRole(role) {
+            // Remove selected class from all cards
+            document.querySelectorAll('.role-card').forEach(card => {
+                card.classList.remove('selected');
             });
-            video.srcObject = stream;
-        } catch (err) {
-            console.error('Error accessing webcam:', err);
-            alert('Unable to access webcam. Please ensure you have granted camera permissions.');
-        }
-    }
-    
-    // Initialize webcam on page load
-    initWebcam();
-    
-    // Capture photo
-    captureBtn.addEventListener('click', function() {
-        const context = canvas.getContext('2d');
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg');
-        photo.src = dataUrl;
-        photoDataInput.value = dataUrl;
-        
-        // Show preview and hide webcam
-        video.style.display = 'none';
-        captureBtn.style.display = 'none';
-        photoPreview.classList.remove('hidden');
-    });
-    
-    // Retake photo
-    retakeBtn.addEventListener('click', function() {
-        // Show webcam and hide preview
-        video.style.display = 'block';
-        captureBtn.style.display = 'block';
-        photoPreview.classList.add('hidden');
-        photoDataInput.value = '';
-    });
-    
-    // Show/hide Aadhaar field based on role
-    roleSelect.addEventListener('change', function() {
-        if (this.value === 'visitor') {
-            aadhaarContainer.classList.remove('hidden');
-            aadhaarInput.setAttribute('required', 'required');
-        } else {
-            aadhaarContainer.classList.add('hidden');
-            aadhaarInput.removeAttribute('required');
-        }
-    });
-    
-    // Format Aadhaar number as user types
-    aadhaarInput.addEventListener('input', function() {
-        let value = this.value.replace(/\D/g, ''); // Remove non-digits
-        if (value.length > 12) {
-            value = value.slice(0, 12);
-        }
-        
-        // Format with spaces
-        if (value.length > 8) {
-            this.value = `${value.slice(0, 4)} ${value.slice(4, 8)} ${value.slice(8)}`;
-        } else if (value.length > 4) {
-            this.value = `${value.slice(0, 4)} ${value.slice(4)}`;
-        } else {
-            this.value = value;
-        }
-    });
-    
-    // Handle form submission
-    registerForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Validate form
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        
-        if (password !== confirmPassword) {
-            showAlert('Passwords do not match', 'error');
-            return;
-        }
-        
-        if (roleSelect.value === 'visitor' && !aadhaarInput.value) {
-            showAlert('Aadhaar number is required for visitors', 'error');
-            return;
-        }
-        
-        // Disable submit button and show loading state
-        const registerBtn = document.getElementById('register-btn');
-        registerBtn.disabled = true;
-        registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Registering...';
-        
-        // Prepare form data
-        const formData = new FormData(this);
-        
-        // Remove spaces from Aadhaar number
-        if (formData.get('aadhaar')) {
-            formData.set('aadhaar', formData.get('aadhaar').replace(/\s/g, ''));
-        }
-        
-        // Submit form
-        fetch('/register', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show success message
-                registrationForm.classList.add('hidden');
-                registrationSuccess.classList.remove('hidden');
-                userIdSpan.textContent = data.user_id;
-                
-                if (data.status === 'pending') {
-                    successTitle.textContent = 'Registration Pending Approval';
-                    successMessage.textContent = data.message;
-                } else {
-                    successTitle.textContent = 'Registration Successful!';
-                    successMessage.textContent = data.message;
-                }
-                
-                // Stop webcam stream
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
+            
+            // Add selected class to clicked card
+            event.currentTarget.classList.add('selected');
+            
+            // Set hidden input value
+            document.getElementById('role').value = role;
+            
+            // Show/hide role-specific fields
+            const aadhaarField = document.getElementById('aadhaarField');
+            const agencyJoinField = document.getElementById('agencyJoinField');
+            
+            // Hide all optional fields first
+            aadhaarField.classList.add('hidden-field');
+            agencyJoinField.classList.add('hidden-field');
+            
+            // Show relevant fields based on role
+            if (role === 'visitor') {
+                aadhaarField.classList.remove('hidden-field');
+                agencyJoinField.classList.remove('hidden-field');
+                document.getElementById('aadhaar').required = true;
             } else {
-                // Show error message
-                showAlert(data.message, 'error');
-                registerBtn.disabled = false;
-                registerBtn.innerHTML = 'Register';
+                document.getElementById('aadhaar').required = false;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('An error occurred. Please try again.', 'error');
-            registerBtn.disabled = false;
-            registerBtn.innerHTML = 'Register';
+        }
+
+        function startCamera() {
+            const video = document.getElementById('webcam');
+            const startBtn = document.getElementById('start-camera');
+            const captureBtn = document.getElementById('capture-photo');
+            
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: 640, 
+                    height: 480,
+                    facingMode: 'user'
+                } 
+            })
+            .then(function(stream) {
+                currentStream = stream;
+                video.srcObject = stream;
+                video.style.display = 'block';
+                startBtn.style.display = 'none';
+                captureBtn.style.display = 'inline-block';
+                
+                // Show webcam container
+                const container = document.querySelector('.webcam-container');
+                if (container) {
+                    container.style.display = 'block';
+                }
+            })
+            .catch(function(err) {
+                console.error('Error accessing camera:', err);
+                alert('Unable to access camera. Please check permissions.');
+            });
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('photo-canvas');
+            const preview = document.getElementById('photo-preview');
+            const captureBtn = document.getElementById('capture-photo');
+            const retakeBtn = document.getElementById('retake-photo');
+            
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw the video frame to canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Get the image data
+            capturedPhotoData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Show preview
+            preview.src = capturedPhotoData;
+            preview.style.display = 'block';
+            
+            // Hide video and show retake button
+            video.style.display = 'none';
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'inline-block';
+            
+            // Stop camera stream
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            
+            // Update hidden input
+            document.getElementById('photoData').value = capturedPhotoData;
+        }
+
+        function retakePhoto() {
+            const video = document.getElementById('webcam');
+            const preview = document.getElementById('photo-preview');
+            const captureBtn = document.getElementById('capture-photo');
+            const retakeBtn = document.getElementById('retake-photo');
+            
+            // Hide preview
+            preview.style.display = 'none';
+            
+            // Reset buttons
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'none';
+            
+            // Clear captured data
+            capturedPhotoData = null;
+            document.getElementById('photoData').value = '';
+            
+            // Restart camera
+            startCamera();
+        }
+
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+        }
+
+        // Stop camera when page unloads
+        window.addEventListener('beforeunload', stopCamera);
+
+        // Form submission
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const role = document.getElementById('role').value;
+            if (!role) {
+                alert('Please select a role');
+                return;
+            }
+            
+            // Show loading modal
+            document.getElementById('loadingModal').style.display = 'flex';
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('fullName', document.getElementById('fullName').value);
+            formData.append('phone', document.getElementById('phone').value);
+            formData.append('email', document.getElementById('email').value);
+            formData.append('username', document.getElementById('username').value);
+            formData.append('password', document.getElementById('password').value);
+            formData.append('role', role);
+            
+            if (role === 'visitor') {
+                formData.append('aadhaar', document.getElementById('aadhaar').value);
+                const agencyId = document.getElementById('agencyId').value;
+                if (agencyId) {
+                    formData.append('agencyId', agencyId);
+                }
+            }
+            
+            if (capturedPhotoData) {
+                formData.append('photoData', capturedPhotoData);
+            }
+            
+            // Submit form
+            fetch('/register', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loadingModal').style.display = 'none';
+                
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = '/login';
+                } else {
+                    alert('Registration failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                document.getElementById('loadingModal').style.display = 'none';
+                console.error('Error:', error);
+                alert('Registration failed. Please try again.');
+            });
         });
-    });
-    
-    // Show alert message
-    function showAlert(message, type) {
-        registrationAlert.textContent = message;
-        registrationAlert.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
-        
-        if (type === 'error') {
-            registrationAlert.classList.add('bg-red-50', 'text-red-700');
-        } else {
-            registrationAlert.classList.add('bg-green-50', 'text-green-700');
-        }
-        
-        // Scroll to alert
-        registrationAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    
-    // Clean up webcam on page unload
-    window.addEventListener('beforeunload', function() {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-        }
-    });
-});
-</script>
-{% endblock %}
+    </script>
+</body>
+</html>
