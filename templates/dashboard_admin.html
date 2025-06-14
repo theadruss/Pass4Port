@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Admin Dashboard - Pass4Port{% endblock %}
+
 {% block content %}
 <div class="min-h-screen bg-gray-50">
     <!-- Header -->
@@ -8,16 +10,15 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <div class="bg-red-600 p-2 rounded-lg">
-                        <i class="fas fa-shield-alt text-white text-xl"></i>
+                        <i class="fas fa-user-shield text-white text-xl"></i>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold text-gray-900">System Administrator</h1>
-                        <p class="text-sm text-gray-600">Complete System Control & Management</p>
-                        <p class="text-xs text-gray-500">Admin ID: {{ session.user_id }} | Last Login: Today 09:00 AM</p>
+                        <h1 class="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+                        <p class="text-sm text-gray-600">Welcome, {{ session.name }}</p>
+                        <p class="text-xs text-gray-500">ID: {{ session.user_id }}</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">Super Admin</span>
                     <button class="p-2 text-gray-600 hover:text-gray-900">
                         <i class="fas fa-bell"></i>
                     </button>
@@ -33,490 +34,238 @@
     </div>
 
     <div class="container mx-auto px-4 py-8">
-        <!-- Tabs -->
-        <div class="mb-6">
-            <div class="border-b border-gray-200">
-                <nav class="-mb-px flex space-x-8">
-                    <button class="tab-button active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600" data-tab="overview">
-                        Overview
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="users">
-                        User Management
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="departments">
-                        Departments
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="security">
-                        Security
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="reports">
-                        Reports
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="settings">
-                        Settings
-                    </button>
-                </nav>
+        <!-- Quick Stats -->
+        <div class="grid md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Users</p>
+                        <p class="text-3xl font-bold text-blue-600">{{ stats.total_users }}</p>
+                    </div>
+                    <i class="fas fa-users text-3xl text-blue-600"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Active Visitors</p>
+                        <p class="text-3xl font-bold text-green-600">{{ stats.active_visitors }}</p>
+                    </div>
+                    <i class="fas fa-user-check text-3xl text-green-600"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Pending Approvals</p>
+                        <p class="text-3xl font-bold text-yellow-600">{{ stats.pending_approvals }}</p>
+                    </div>
+                    <i class="fas fa-user-clock text-3xl text-yellow-600"></i>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Flagged IDs</p>
+                        <p class="text-3xl font-bold text-red-600">{{ stats.flagged_ids }}</p>
+                    </div>
+                    <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
+                </div>
             </div>
         </div>
 
-        <!-- Overview Tab -->
-        <div id="overview-tab" class="tab-content">
-            <!-- System Stats -->
-            <div class="grid md:grid-cols-6 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Total Users</p>
-                            <p class="text-3xl font-bold text-blue-600">{{ stats.total_users }}</p>
-                        </div>
-                        <i class="fas fa-users text-3xl text-blue-600"></i>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Active Visitors</p>
-                            <p class="text-3xl font-bold text-green-600">{{ stats.active_visitors }}</p>
-                        </div>
-                        <i class="fas fa-user-check text-3xl text-green-600"></i>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Pending Approvals</p>
-                            <p class="text-3xl font-bold text-orange-600">{{ stats.pending_approvals }}</p>
-                        </div>
-                        <i class="fas fa-exclamation-triangle text-3xl text-orange-600"></i>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Flagged IDs</p>
-                            <p class="text-3xl font-bold text-red-600">{{ stats.flagged_ids }}</p>
-                        </div>
-                        <i class="fas fa-lock text-3xl text-red-600"></i>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Departments</p>
-                            <p class="text-3xl font-bold text-purple-600">12</p>
-                        </div>
-                        <i class="fas fa-building text-3xl text-purple-600"></i>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600">Officers</p>
-                            <p class="text-3xl font-bold text-indigo-600">45</p>
-                        </div>
-                        <i class="fas fa-shield-alt text-3xl text-indigo-600"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- System Activity -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Pending Registrations -->
             <div class="bg-white rounded-lg shadow">
-                <div class="p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">System Activity</h3>
-                    <p class="text-sm text-gray-600">Recent system events and activities</p>
+                <div class="p-6 border-b">
+                    <h2 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-user-clock text-yellow-600 mr-2"></i>
+                        Pending Registrations
+                    </h2>
                 </div>
-                <div class="p-6">
-                    <div class="space-y-4">
-                        <div class="flex items-center space-x-4 p-3 bg-blue-50 rounded-lg">
-                            <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium">New visitor registration</p>
-                                <p class="text-xs text-gray-600">Rahul Sharma registered - 2 minutes ago</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-4 p-3 bg-green-50 rounded-lg">
-                            <div class="w-2 h-2 bg-green-600 rounded-full"></div>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium">Visit request approved</p>
-                                <p class="text-xs text-gray-600">Dr. Kumar approved VR-2024-005 - 5 minutes ago</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-4 p-3 bg-orange-50 rounded-lg">
-                            <div class="w-2 h-2 bg-orange-600 rounded-full"></div>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium">Security alert resolved</p>
-                                <p class="text-xs text-gray-600">Flagged ID verification completed - 10 minutes ago</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- User Management Tab -->
-        <div id="users-tab" class="tab-content hidden">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold">User Management</h2>
-                <div class="flex space-x-2">
-                    <button class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        <i class="fas fa-upload mr-2"></i>
-                        Import Users
-                    </button>
-                    <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
-                        <i class="fas fa-plus mr-2"></i>
-                        Add User
-                    </button>
-                </div>
-            </div>
-
-            <div class="grid md:grid-cols-4 gap-6">
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium">Visitors</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="text-3xl font-bold text-blue-600 mb-2">892</div>
-                        <p class="text-sm text-gray-600 mb-4">Registered visitors</p>
-                        <button class="w-full px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            Manage Visitors
-                        </button>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium">Officers</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="text-3xl font-bold text-green-600 mb-2">45</div>
-                        <p class="text-sm text-gray-600 mb-4">Designated officers</p>
-                        <button class="w-full px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            Manage Officers
-                        </button>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium">Agencies</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="text-3xl font-bold text-purple-600 mb-2">23</div>
-                        <p class="text-sm text-gray-600 mb-4">Agency representatives</p>
-                        <button class="w-full px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            Manage Agencies
-                        </button>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium">Security</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="text-3xl font-bold text-orange-600 mb-2">12</div>
-                        <p class="text-sm text-gray-600 mb-4">Security personnel</p>
-                        <button class="w-full px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            Manage Security
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Departments Tab -->
-        <div id="departments-tab" class="tab-content hidden">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold">Department Management</h2>
-                <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium">
-                    <i class="fas fa-plus mr-2"></i>
-                    Add Department
-                </button>
-            </div>
-
-            <div class="bg-white rounded-lg shadow">
-                <div class="border rounded-lg overflow-hidden">
-                    <table class="w-full">
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="text-left p-4 font-medium text-gray-900">Department Name</th>
-                                <th class="text-left p-4 font-medium text-gray-900">Code</th>
-                                <th class="text-left p-4 font-medium text-gray-900">Officers</th>
-                                <th class="text-left p-4 font-medium text-gray-900">Status</th>
-                                <th class="text-left p-4 font-medium text-gray-900">Actions</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr class="border-t">
-                                <td class="p-4 font-medium">Ministry of External Affairs</td>
-                                <td class="p-4">
-                                    <span class="border border-gray-300 px-2 py-1 rounded text-xs">MEA</span>
-                                </td>
-                                <td class="p-4">8</td>
-                                <td class="p-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Active</span>
-                                </td>
-                                <td class="p-4">
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for user in pending_registrations %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.username }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ user.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.role|capitalize }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.registration_date }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <div class="flex space-x-2">
-                                        <button class="p-1 text-gray-600 hover:text-gray-900">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="p-1 text-gray-600 hover:text-gray-900">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="p-1 text-red-600 hover:text-red-900">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        <a href="{{ url_for('approve_registration', username=user.username) }}" class="px-3 py-1 bg-green-100 text-green-800 rounded-md hover:bg-green-200">
+                                            Approve
+                                        </a>
+                                        <a href="{{ url_for('reject_registration', username=user.username) }}" class="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200">
+                                            Reject
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
-                            <tr class="border-t">
-                                <td class="p-4 font-medium">Ministry of Home Affairs</td>
-                                <td class="p-4">
-                                    <span class="border border-gray-300 px-2 py-1 rounded text-xs">MHA</span>
-                                </td>
-                                <td class="p-4">12</td>
-                                <td class="p-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Active</span>
-                                </td>
-                                <td class="p-4">
-                                    <div class="flex space-x-2">
-                                        <button class="p-1 text-gray-600 hover:text-gray-900">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="p-1 text-gray-600 hover:text-gray-900">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="p-1 text-red-600 hover:text-red-900">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
+                            {% endfor %}
+                            
+                            {% if pending_registrations|length == 0 %}
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    No pending registrations found.
                                 </td>
                             </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Flagged Aadhaar Numbers -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                            Flagged Aadhaar Numbers
+                        </h2>
+                        <button id="add-flagged-btn" class="px-3 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200">
+                            <i class="fas fa-plus mr-1"></i>Add New
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aadhaar Number</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for aadhaar in flagged_aadhaar %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ aadhaar.aadhaar[:4] }}XXXX{{ aadhaar.aadhaar[-4:] }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ aadhaar.reason }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ aadhaar.added_by }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ aadhaar.added_on }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <button class="remove-flagged-btn px-3 py-1 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200" data-aadhaar="{{ aadhaar.aadhaar }}">
+                                        Remove
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            
+                            {% if flagged_aadhaar|length == 0 %}
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    No flagged Aadhaar numbers found.
+                                </td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-
-        <!-- Security Tab -->
-        <div id="security-tab" class="tab-content hidden">
-            <h2 class="text-2xl font-bold mb-6">Security Management</h2>
-
-            <div class="grid md:grid-cols-2 gap-6">
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Flagged Aadhaar Database</h3>
-                        <p class="text-sm text-gray-600">Manage blacklisted and flagged Aadhaar IDs</p>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg">
-                            <div>
-                                <p class="font-semibold text-red-800">Total Flagged IDs</p>
-                                <p class="text-2xl font-bold text-red-600">{{ stats.flagged_ids }}</p>
-                            </div>
-                            <i class="fas fa-lock text-3xl text-red-600"></i>
-                        </div>
-
-                        <form id="add-flagged-id-form">
-                            <div>
-                                <label for="newFlaggedId" class="block text-sm font-medium text-gray-700 mb-2">Add Flagged Aadhaar ID</label>
-                                <div class="flex space-x-2">
-                                    <input type="text" id="newFlaggedId" name="newFlaggedId" class="flex-1 p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter Aadhaar ID">
-                                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Add</button>
-                                </div>
-                            </div>
-                        </form>
-
-                        <button class="w-full px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            <i class="fas fa-database mr-2"></i>
-                            Manage Flagged Database
+        
+        <!-- System Logs -->
+        <div class="bg-white rounded-lg shadow mt-6">
+            <div class="p-6 border-b">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-list-alt text-blue-600 mr-2"></i>
+                        System Logs
+                    </h2>
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200">
+                            <i class="fas fa-filter mr-1"></i>Filter
+                        </button>
+                        <button class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm hover:bg-green-200">
+                            <i class="fas fa-download mr-1"></i>Export
                         </button>
                     </div>
                 </div>
-
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">System Security Settings</h3>
-                        <p class="text-sm text-gray-600">Configure security parameters and policies</p>
+            </div>
+            
+            <div class="p-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center text-sm text-gray-600 mb-3">
+                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                        <span>System logs are available in the server logs directory.</span>
                     </div>
-                    <div class="p-6 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="font-medium">Auto-flagging enabled</p>
-                                <p class="text-sm text-gray-600">Automatically flag suspicious activities</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="font-medium">Facial recognition</p>
-                                <p class="text-sm text-gray-600">Enable facial recognition verification</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="font-medium">Real-time alerts</p>
-                                <p class="text-sm text-gray-600">Send immediate security alerts</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <button class="w-full px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            <i class="fas fa-cog mr-2"></i>
-                            Advanced Security Settings
-                        </button>
+                    
+                    <div class="bg-gray-100 p-3 rounded-lg font-mono text-xs text-gray-700 overflow-x-auto">
+                        <p>[2024-01-15 09:30:12] INFO: System started</p>
+                        <p>[2024-01-15 09:35:24] INFO: User 'admin' logged in</p>
+                        <p>[2024-01-15 10:12:45] INFO: New visitor registration: Rahul Sharma</p>
+                        <p>[2024-01-15 10:30:18] INFO: Visit request approved by Dr. Rajesh Kumar</p>
+                        <p>[2024-01-15 11:05:42] WARNING: Failed login attempt for user 'unknown'</p>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Reports Tab -->
-        <div id="reports-tab" class="tab-content hidden">
-            <h2 class="text-2xl font-bold mb-6">Reports & Analytics</h2>
-
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Visitor Analytics</h3>
-                        <p class="text-sm text-gray-600">Comprehensive visitor statistics</p>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <div class="text-center">
-                            <i class="fas fa-chart-bar text-6xl text-blue-600 mb-4"></i>
-                            <p class="text-sm text-gray-600">Generate detailed visitor reports</p>
-                        </div>
-                        <button class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">
-                            <i class="fas fa-download mr-2"></i>
-                            Generate Report
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Security Logs</h3>
-                        <p class="text-sm text-gray-600">System security and audit logs</p>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <div class="text-center">
-                            <i class="fas fa-file-alt text-6xl text-green-600 mb-4"></i>
-                            <p class="text-sm text-gray-600">Export security audit trails</p>
-                        </div>
-                        <button class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
-                            <i class="fas fa-download mr-2"></i>
-                            Export Logs
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Compliance Reports</h3>
-                        <p class="text-sm text-gray-600">Regulatory compliance documentation</p>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <div class="text-center">
-                            <i class="fas fa-shield-alt text-6xl text-purple-600 mb-4"></i>
-                            <p class="text-sm text-gray-600">Generate compliance reports</p>
-                        </div>
-                        <button class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md">
-                            <i class="fas fa-download mr-2"></i>
-                            Download Report
-                        </button>
-                    </div>
-                </div>
-            </div>
+<!-- Add Flagged Aadhaar Modal -->
+<div id="add-flagged-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+    <div class="fixed inset-0 bg-black opacity-50"></div>
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative z-10">
+        <div class="text-center mb-4">
+            <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-900">Add Flagged Aadhaar</h3>
+            <p class="text-gray-600">Enter the Aadhaar number to flag in the system.</p>
         </div>
+        
+        <div class="mb-4">
+            <label for="aadhaar-input" class="block text-sm font-medium text-gray-700 mb-2">Aadhaar Number *</label>
+            <input type="text" id="aadhaar-input" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                   placeholder="Enter 12-digit Aadhaar number" maxlength="12">
+        </div>
+        
+        <div class="mb-4">
+            <label for="reason-input" class="block text-sm font-medium text-gray-700 mb-2">Reason for Flagging *</label>
+            <textarea id="reason-input" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Enter reason for flagging this Aadhaar number"></textarea>
+        </div>
+        
+        <div class="flex justify-between">
+            <button id="cancel-add" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                <i class="fas fa-times mr-2"></i>Cancel
+            </button>
+            <button id="confirm-add" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                <i class="fas fa-check mr-2"></i>Add to Flagged List
+            </button>
+        </div>
+    </div>
+</div>
 
-        <!-- Settings Tab -->
-        <div id="settings-tab" class="tab-content hidden">
-            <h2 class="text-2xl font-bold mb-6">System Settings</h2>
-
-            <div class="grid md:grid-cols-2 gap-6">
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">General Settings</h3>
-                        <p class="text-sm text-gray-600">Configure system-wide settings</p>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <form id="general-settings-form">
-                            <div>
-                                <label for="systemName" class="block text-sm font-medium text-gray-700 mb-2">System Name</label>
-                                <input type="text" id="systemName" name="systemName" value="Government Visitor Pass Management System" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label for="timezone" class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-                                <select id="timezone" name="timezone" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="ist" selected>India Standard Time (IST)</option>
-                                    <option value="utc">Coordinated Universal Time (UTC)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="sessionTimeout" class="block text-sm font-medium text-gray-700 mb-2">Session Timeout (minutes)</label>
-                                <input type="number" id="sessionTimeout" name="sessionTimeout" value="30" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md">
-                                Save Settings
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Notification Settings</h3>
-                        <p class="text-sm text-gray-600">Configure system notifications</p>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="font-medium">Email notifications</p>
-                                <p class="text-sm text-gray-600">Send email alerts for critical events</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="font-medium">SMS alerts</p>
-                                <p class="text-sm text-gray-600">Send SMS for security alerts</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" checked class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="font-medium">Push notifications</p>
-                                <p class="text-sm text-gray-600">Browser push notifications</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md">
-                            Update Notifications
-                        </button>
-                    </div>
-                </div>
-            </div>
+<!-- Success Modal -->
+<div id="success-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+    <div class="fixed inset-0 bg-black opacity-50"></div>
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative z-10">
+        <div class="text-center mb-4">
+            <i id="success-icon" class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-900" id="success-title">Success!</h3>
+            <p class="text-gray-600" id="success-message">Operation completed successfully.</p>
+        </div>
+        
+        <div class="flex justify-center">
+            <button id="close-modal" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <i class="fas fa-check mr-2"></i>OK
+            </button>
         </div>
     </div>
 </div>
@@ -525,46 +274,161 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Tab functionality
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
+    const addFlaggedBtn = document.getElementById('add-flagged-btn');
+    const addFlaggedModal = document.getElementById('add-flagged-modal');
+    const cancelAdd = document.getElementById('cancel-add');
+    const confirmAdd = document.getElementById('confirm-add');
+    const removeFlaggedBtns = document.querySelectorAll('.remove-flagged-btn');
+    const successModal = document.getElementById('success-modal');
+    const closeModal = document.getElementById('close-modal');
+    const successIcon = document.getElementById('success-icon');
+    const successTitle = document.getElementById('success-title');
+    const successMessage = document.getElementById('success-message');
     
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const tabName = this.getAttribute('data-tab');
-            
-            // Remove active class from all buttons
-            tabButtons.forEach(btn => {
-                btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
-            });
-            
-            // Add active class to clicked button
-            this.classList.add('active', 'border-blue-500', 'text-blue-600');
-            this.classList.remove('border-transparent', 'text-gray-500');
-            
-            // Hide all tab contents
-            tabContents.forEach(content => content.classList.add('hidden'));
-            
-            // Show selected tab content
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
-        });
+    // Format Aadhaar number as user types
+    const aadhaarInput = document.getElementById('aadhaar-input');
+    aadhaarInput.addEventListener('input', function() {
+        // Remove any non-digit characters
+        let value = this.value.replace(/\D/g, '');
+        
+        // Limit to 12 digits
+        if (value.length > 12) {
+            value = value.substring(0, 12);
+        }
+        
+        this.value = value;
     });
     
-    // Add flagged ID form
-    document.getElementById('add-flagged-id-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const newId = document.getElementById('newFlaggedId').value;
-        if (newId) {
-            alert('Flagged ID added: ' + newId);
-            document.getElementById('newFlaggedId').value = '';
+    // Show add flagged modal
+    addFlaggedBtn.addEventListener('click', function() {
+        addFlaggedModal.classList.remove('hidden');
+        aadhaarInput.focus();
+    });
+    
+    // Cancel add
+    cancelAdd.addEventListener('click', function() {
+        addFlaggedModal.classList.add('hidden');
+        aadhaarInput.value = '';
+        document.getElementById('reason-input').value = '';
+    });
+    
+    // Confirm add
+    confirmAdd.addEventListener('click', async function() {
+        const aadhaar = aadhaarInput.value.trim();
+        const reason = document.getElementById('reason-input').value.trim();
+        
+        if (!aadhaar) {
+            alert('Please enter an Aadhaar number');
+            return;
+        }
+        
+        if (!/^\d{12}$/.test(aadhaar)) {
+            alert('Please enter a valid 12-digit Aadhaar number');
+            return;
+        }
+        
+        if (!reason) {
+            alert('Please provide a reason for flagging');
+            return;
+        }
+        
+        // Show loading state
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+        
+        try {
+            const response = await fetch('/api/add_flagged_aadhaar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    aadhaar,
+                    reason
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Hide add modal
+                addFlaggedModal.classList.add('hidden');
+                
+                // Show success modal
+                successIcon.className = 'fas fa-check-circle text-5xl text-green-500 mb-4';
+                successTitle.textContent = 'Aadhaar Flagged';
+                successMessage.textContent = 'The Aadhaar number has been added to the flagged list.';
+                successModal.classList.remove('hidden');
+                
+                // Refresh page after closing modal
+                closeModal.addEventListener('click', function() {
+                    location.reload();
+                }, { once: true });
+            } else {
+                alert(result.message || 'Failed to add Aadhaar to flagged list');
+            }
+        } catch (error) {
+            console.error('Add flagged Aadhaar error:', error);
+            alert('An error occurred while adding the Aadhaar to the flagged list. Please try again.');
+        } finally {
+            // Reset button state
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-check mr-2"></i>Add to Flagged List';
         }
     });
     
-    // General settings form
-    document.getElementById('general-settings-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        alert('Settings saved successfully!');
+    // Remove flagged Aadhaar
+    removeFlaggedBtns.forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const aadhaar = this.dataset.aadhaar;
+            
+            if (!confirm('Are you sure you want to remove this Aadhaar number from the flagged list?')) {
+                return;
+            }
+            
+            // Show loading state
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            try {
+                const response = await fetch('/api/remove_flagged_aadhaar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ aadhaar })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success modal
+                    successIcon.className = 'fas fa-check-circle text-5xl text-green-500 mb-4';
+                    successTitle.textContent = 'Aadhaar Removed';
+                    successMessage.textContent = 'The Aadhaar number has been removed from the flagged list.';
+                    successModal.classList.remove('hidden');
+                    
+                    // Refresh page after closing modal
+                    closeModal.addEventListener('click', function() {
+                        location.reload();
+                    }, { once: true });
+                } else {
+                    alert(result.message || 'Failed to remove Aadhaar from flagged list');
+                }
+            } catch (error) {
+                console.error('Remove flagged Aadhaar error:', error);
+                alert('An error occurred while removing the Aadhaar from the flagged list. Please try again.');
+            } finally {
+                // Reset button state
+                this.disabled = false;
+                this.innerHTML = 'Remove';
+            }
+        });
+    });
+    
+    // Close success modal
+    closeModal.addEventListener('click', function() {
+        successModal.classList.add('hidden');
     });
 });
 </script>

@@ -3,193 +3,151 @@
 {% block title %}Register - Pass4Port{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-2xl mx-auto">
-        <!-- Header -->
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-            <p class="text-gray-600">Join the Pass4Port Visitor Management System</p>
-        </div>
-
-        <!-- Progress Bar -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gray-700">Registration Progress</span>
-                <span class="text-sm font-medium text-gray-700" id="progress-text">1/3 Steps</span>
+            <div class="flex items-center justify-center">
+                <div class="bg-blue-600 p-3 rounded-lg">
+                    <i class="fas fa-shield-alt text-white text-2xl"></i>
+                </div>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" id="progress-bar" style="width: 33%"></div>
-            </div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Create your Pass4Port Account
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Register to access the Visitor Management System
+            </p>
         </div>
-
-        <!-- Registration Form -->
-        <form id="registration-form" action="/register" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow-md p-6">
+        
+        <div id="registration-form" class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div id="registration-alert" class="hidden rounded-md p-4 mb-4"></div>
             
-            <!-- Step 1: Basic Information -->
-            <div id="step-1" class="registration-step">
-                <h2 class="text-xl font-semibold mb-6 text-gray-800">
-                    <i class="fas fa-user mr-2 text-blue-600"></i>
-                    Basic Information
-                </h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form id="register-form" class="space-y-6">
+                <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
                     <div>
-                        <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
-                        <input type="text" id="fullName" name="fullName" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="Enter your full name">
+                        <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <div class="mt-1">
+                            <input type="text" name="fullName" id="fullName" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
                     </div>
-                    
-                    <div>
-                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
-                        <input type="tel" id="phone" name="phone" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="Enter your phone number">
-                    </div>
-                    
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-                        <input type="email" id="email" name="email" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="Enter your email address">
-                    </div>
-                    
-                    <div>
-                        <label for="role" class="block text-sm font-medium text-gray-700 mb-2">Role *</label>
-                        <select id="role" name="role" required 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select your role</option>
-                            <option value="visitor">Visitor</option>
-                            <option value="officer">Officer</option>
-                            <option value="security">Security</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username *</label>
-                        <input type="text" id="username" name="username" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="Choose a username">
-                    </div>
-                    
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
-                        <input type="password" id="password" name="password" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="Create a password">
-                        <p class="text-xs text-gray-500 mt-1">Must contain at least 1 number and 1 special character</p>
-                    </div>
-                    
-                    <div class="md:col-span-2">
-                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password *</label>
-                        <input type="password" id="confirmPassword" name="confirmPassword" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="Confirm your password">
-                    </div>
-                </div>
-                
-                <div class="flex justify-end mt-6">
-                    <button type="button" id="next-step" 
-                            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        Next Step <i class="fas fa-arrow-right ml-2"></i>
-                    </button>
-                </div>
-            </div>
 
-            <!-- Step 2: Verification -->
-            <div id="step-2" class="registration-step hidden">
-                <h2 class="text-xl font-semibold mb-6 text-gray-800">
-                    <i class="fas fa-shield-alt mr-2 text-blue-600"></i>
-                    Identity Verification
-                </h2>
-                
-                <!-- File Upload -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Upload ID Proof (Aadhaar/PAN/Passport)</label>
-                    <div id="file-drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
-                        <p class="text-gray-600 mb-2">Drag and drop your file here, or</p>
-                        <button type="button" id="file-select-button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                            Choose File
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <div class="mt-1">
+                            <input type="tel" name="phone" id="phone" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <div class="mt-1">
+                            <input type="email" name="email" id="email" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                        <div class="mt-1">
+                            <input type="text" name="username" id="username" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <div class="mt-1">
+                            <input type="password" name="password" id="password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                        <div class="mt-1">
+                            <input type="password" name="confirmPassword" id="confirmPassword" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="role" class="block text-sm font-medium text-gray-700">Register as</label>
+                        <div class="mt-1">
+                            <select id="role" name="role" required class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="visitor">Visitor</option>
+                                <option value="officer">Officer</option>
+                                <option value="security">Security Personnel</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="aadhaar-container" class="sm:col-span-2">
+                        <label for="aadhaar" class="block text-sm font-medium text-gray-700">Aadhaar Number (Required for Visitors)</label>
+                        <div class="mt-1">
+                            <input type="text" name="aadhaar" id="aadhaar" placeholder="12-digit Aadhaar number" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Format: XXXX XXXX XXXX or XXXXXXXXXXXX</p>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Photo</label>
+                    <div class="webcam-container">
+                        <video id="webcam" autoplay playsinline width="400" height="300" class="rounded-lg shadow-md"></video>
+                        <div class="webcam-overlay"></div>
+                        <button type="button" id="capture-btn" class="webcam-capture-btn px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-camera mr-2"></i> Capture Photo
                         </button>
-                        <input type="file" id="aadhaarFile" name="aadhaarFile" accept=".jpg,.jpeg,.png,.pdf" class="hidden">
-                        <p class="text-xs text-gray-500 mt-2">Maximum file size: 5MB (JPG, PNG, PDF)</p>
-                        <p id="file-name" class="text-sm text-green-600 mt-2"></p>
                     </div>
-                </div>
-                
-                <!-- Photo Capture -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Capture Your Photo</label>
-                    <div class="border border-gray-300 rounded-lg p-4 text-center">
-                        <video id="video" class="hidden w-full max-w-sm mx-auto rounded-lg mb-4" autoplay></video>
-                        <canvas id="canvas" class="hidden w-full max-w-sm mx-auto rounded-lg mb-4"></canvas>
-                        
-                        <div class="space-x-2">
-                            <button type="button" id="start-camera" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-                                <i class="fas fa-camera mr-2"></i>Start Camera
-                            </button>
-                            <button type="button" id="capture-photo" class="hidden px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                                <i class="fas fa-camera mr-2"></i>Capture Photo
-                            </button>
-                            <button type="button" id="retake-photo" class="hidden px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
-                                <i class="fas fa-redo mr-2"></i>Retake Photo
+                    <canvas id="canvas" width="400" height="300" class="hidden"></canvas>
+                    <div id="photo-preview" class="mt-4 hidden">
+                        <img id="photo" class="rounded-lg shadow-md mx-auto" alt="Captured photo">
+                        <div class="mt-2 flex justify-center">
+                            <button type="button" id="retake-btn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                <i class="fas fa-redo mr-2"></i> Retake Photo
                             </button>
                         </div>
-                        <input type="hidden" id="photoData" name="photoData">
+                    </div>
+                    <input type="hidden" name="photoData" id="photoData">
+                </div>
+
+                <div>
+                    <button type="submit" id="register-btn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Register
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">
+                            Already have an account?
+                        </span>
                     </div>
                 </div>
-                
-                <div class="flex justify-between mt-6">
-                    <button type="button" id="prev-step" 
-                            class="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                        <i class="fas fa-arrow-left mr-2"></i>Previous
-                    </button>
-                    <button type="button" id="submit-registration" disabled
-                            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                        Complete Registration <i class="fas fa-check ml-2"></i>
-                    </button>
+
+                <div class="mt-6">
+                    <a href="{{ url_for('login') }}" class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Sign in
+                    </a>
                 </div>
             </div>
-
-            <!-- Step 3: Success -->
-            <div id="step-3" class="registration-step hidden text-center">
-                <div class="mb-6">
-                    <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-2" id="success-message">Registration Successful!</h2>
-                    <p class="text-gray-600">Your account has been created successfully.</p>
-                </div>
-                
-                <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span class="font-medium text-gray-700">User ID:</span>
-                            <span id="user-id" class="text-gray-900">Loading...</span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-gray-700">Registration Date:</span>
-                            <span id="reg-date" class="text-gray-900"></span>
-                        </div>
-                        <div>
-                            <span class="font-medium text-gray-700">Account Status:</span>
-                            <span id="account-status" class="text-green-600 font-medium">Active</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <h3 class="font-medium text-blue-800 mb-2">Next Steps:</h3>
-                    <p id="next-steps-message" class="text-blue-700 text-sm">
-                        You can now login to your account and start using the visitor management system.
-                    </p>
-                </div>
-                
-                <a href="/login" class="inline-block px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    Go to Login <i class="fas fa-sign-in-alt ml-2"></i>
+        </div>
+        
+        <div id="registration-success" class="hidden bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center">
+            <div class="rounded-full bg-green-100 p-3 mx-auto w-16 h-16 flex items-center justify-center">
+                <i class="fas fa-check-circle text-green-600 text-3xl"></i>
+            </div>
+            <h3 class="mt-4 text-xl font-medium text-gray-900" id="success-title">Registration Successful!</h3>
+            <p class="mt-2 text-gray-600" id="success-message">Your account has been created successfully.</p>
+            <p class="mt-2 text-gray-600">Your User ID: <span id="user-id" class="font-semibold"></span></p>
+            <div class="mt-6">
+                <a href="{{ url_for('login') }}" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Proceed to Login
                 </a>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -197,297 +155,192 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let currentStep = 1;
-    const form = document.getElementById('registration-form');
+    const registerForm = document.getElementById('register-form');
     const roleSelect = document.getElementById('role');
-    let stream = null;
+    const aadhaarContainer = document.getElementById('aadhaar-container');
+    const aadhaarInput = document.getElementById('aadhaar');
+    const registrationAlert = document.getElementById('registration-alert');
+    const registrationForm = document.getElementById('registration-form');
+    const registrationSuccess = document.getElementById('registration-success');
+    const userIdSpan = document.getElementById('user-id');
+    const successTitle = document.getElementById('success-title');
+    const successMessage = document.getElementById('success-message');
     
-    // Initialize registration date
-    document.getElementById('reg-date').textContent = new Date().toLocaleDateString();
-    
-    // Form navigation
-    document.getElementById('next-step').addEventListener('click', function() {
-        if (!validateBasicInfo()) {
-            return;
-        }
-        
-        const role = roleSelect.value;
-        if (['officer', 'admin', 'security'].includes(role)) {
-            // For privileged roles, skip verification and submit directly
-            handlePrivilegedRegistration();
-            return;
-        }
-        
-        showStep(2);
-        updateProgress(2);
-    });
-    
-    document.getElementById('prev-step').addEventListener('click', function() {
-        showStep(1);
-        updateProgress(1);
-    });
-    
-    // File upload handling
-    const fileInput = document.getElementById('aadhaarFile');
-    const fileSelectButton = document.getElementById('file-select-button');
-    const fileDropArea = document.getElementById('file-drop-area');
-    const fileName = document.getElementById('file-name');
-    
-    fileSelectButton.addEventListener('click', function() {
-        fileInput.click();
-    });
-    
-    fileInput.addEventListener('change', function() {
-        handleFileSelection(this);
-    });
-    
-    // Drag and drop functionality
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        fileDropArea.addEventListener(eventName, preventDefaults, false);
-    });
-    
-    ['dragenter', 'dragover'].forEach(eventName => {
-        fileDropArea.addEventListener(eventName, highlight, false);
-    });
-    
-    ['dragleave', 'drop'].forEach(eventName => {
-        fileDropArea.addEventListener(eventName, unhighlight, false);
-    });
-    
-    fileDropArea.addEventListener('drop', function(e) {
-        handleFileDrop(e);
-    });
-    
-    // Camera functionality
-    const startCameraBtn = document.getElementById('start-camera');
-    const capturePhotoBtn = document.getElementById('capture-photo');
-    const retakePhotoBtn = document.getElementById('retake-photo');
-    const video = document.getElementById('video');
+    // Webcam elements
+    const video = document.getElementById('webcam');
     const canvas = document.getElementById('canvas');
+    const photo = document.getElementById('photo');
+    const captureBtn = document.getElementById('capture-btn');
+    const retakeBtn = document.getElementById('retake-btn');
+    const photoPreview = document.getElementById('photo-preview');
     const photoDataInput = document.getElementById('photoData');
     
-    startCameraBtn.addEventListener('click', startCamera);
-    capturePhotoBtn.addEventListener('click', capturePhoto);
-    retakePhotoBtn.addEventListener('click', retakePhoto);
+    // Initialize webcam
+    let stream = null;
     
-    // Form submission
-    document.getElementById('submit-registration').addEventListener('click', async function(e) {
-        e.preventDefault();
-        await submitRegistrationForm();
+    async function initWebcam() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 400 },
+                    height: { ideal: 300 },
+                    facingMode: 'user'
+                }, 
+                audio: false 
+            });
+            video.srcObject = stream;
+        } catch (err) {
+            console.error('Error accessing webcam:', err);
+            alert('Unable to access webcam. Please ensure you have granted camera permissions.');
+        }
+    }
+    
+    // Initialize webcam on page load
+    initWebcam();
+    
+    // Capture photo
+    captureBtn.addEventListener('click', function() {
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        photo.src = dataUrl;
+        photoDataInput.value = dataUrl;
+        
+        // Show preview and hide webcam
+        video.style.display = 'none';
+        captureBtn.style.display = 'none';
+        photoPreview.classList.remove('hidden');
     });
     
-    // Helper functions
-    function validateBasicInfo() {
-        const requiredFields = ['fullName', 'phone', 'email', 'username', 'password', 'confirmPassword', 'role'];
-        let isValid = true;
-        
-        for (let field of requiredFields) {
-            const element = document.getElementById(field);
-            if (!element.value.trim()) {
-                element.focus();
-                alert(`Please fill in the ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-                return false;
-            }
+    // Retake photo
+    retakeBtn.addEventListener('click', function() {
+        // Show webcam and hide preview
+        video.style.display = 'block';
+        captureBtn.style.display = 'block';
+        photoPreview.classList.add('hidden');
+        photoDataInput.value = '';
+    });
+    
+    // Show/hide Aadhaar field based on role
+    roleSelect.addEventListener('change', function() {
+        if (this.value === 'visitor') {
+            aadhaarContainer.classList.remove('hidden');
+            aadhaarInput.setAttribute('required', 'required');
+        } else {
+            aadhaarContainer.classList.add('hidden');
+            aadhaarInput.removeAttribute('required');
+        }
+    });
+    
+    // Format Aadhaar number as user types
+    aadhaarInput.addEventListener('input', function() {
+        let value = this.value.replace(/\D/g, ''); // Remove non-digits
+        if (value.length > 12) {
+            value = value.slice(0, 12);
         }
         
-        // Check password match
+        // Format with spaces
+        if (value.length > 8) {
+            this.value = `${value.slice(0, 4)} ${value.slice(4, 8)} ${value.slice(8)}`;
+        } else if (value.length > 4) {
+            this.value = `${value.slice(0, 4)} ${value.slice(4)}`;
+        } else {
+            this.value = value;
+        }
+    });
+    
+    // Handle form submission
+    registerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validate form
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
+        
         if (password !== confirmPassword) {
-            alert('Passwords do not match');
-            document.getElementById('confirmPassword').focus();
-            return false;
+            showAlert('Passwords do not match', 'error');
+            return;
         }
         
-        // Check password strength - make this more lenient for testing
-        if (password.length < 6) {
-            alert('Password must be at least 6 characters long');
-            document.getElementById('password').focus();
-            return false;
+        if (roleSelect.value === 'visitor' && !aadhaarInput.value) {
+            showAlert('Aadhaar number is required for visitors', 'error');
+            return;
         }
         
-        return true;
-    }
-    
-    function handlePrivilegedRegistration() {
-        // Submit form directly for privileged roles
-        submitRegistrationForm(true);
-    }
-    
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-    
-    function highlight() {
-        fileDropArea.classList.add('border-blue-500', 'bg-blue-50');
-    }
-    
-    function unhighlight() {
-        fileDropArea.classList.remove('border-blue-500', 'bg-blue-50');
-    }
-    
-    function handleFileSelection(input) {
-        if (input.files && input.files[0]) {
-            const file = input.files[0];
-            if (file.size > 5 * 1024 * 1024) {
-                alert('File is too large. Maximum size is 5MB.');
-                input.value = '';
-                fileName.textContent = '';
-                return;
+        // Disable submit button and show loading state
+        const registerBtn = document.getElementById('register-btn');
+        registerBtn.disabled = true;
+        registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Registering...';
+        
+        // Prepare form data
+        const formData = new FormData(this);
+        
+        // Remove spaces from Aadhaar number
+        if (formData.get('aadhaar')) {
+            formData.set('aadhaar', formData.get('aadhaar').replace(/\s/g, ''));
+        }
+        
+        // Submit form
+        fetch('/register', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                registrationForm.classList.add('hidden');
+                registrationSuccess.classList.remove('hidden');
+                userIdSpan.textContent = data.user_id;
+                
+                if (data.status === 'pending') {
+                    successTitle.textContent = 'Registration Pending Approval';
+                    successMessage.textContent = data.message;
+                } else {
+                    successTitle.textContent = 'Registration Successful!';
+                    successMessage.textContent = data.message;
+                }
+                
+                // Stop webcam stream
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            } else {
+                // Show error message
+                showAlert(data.message, 'error');
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = 'Register';
             }
-            fileName.textContent = file.name;
-            checkFormCompletion();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred. Please try again.', 'error');
+            registerBtn.disabled = false;
+            registerBtn.innerHTML = 'Register';
+        });
+    });
+    
+    // Show alert message
+    function showAlert(message, type) {
+        registrationAlert.textContent = message;
+        registrationAlert.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
+        
+        if (type === 'error') {
+            registrationAlert.classList.add('bg-red-50', 'text-red-700');
         } else {
-            fileName.textContent = '';
-            checkFormCompletion();
+            registrationAlert.classList.add('bg-green-50', 'text-green-700');
         }
+        
+        // Scroll to alert
+        registrationAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     
-    function handleFileDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        
-        if (files && files[0]) {
-            fileInput.files = files;
-            handleFileSelection(fileInput);
-        }
-    }
-    
-    function startCamera() {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function(mediaStream) {
-                    stream = mediaStream;
-                    video.srcObject = mediaStream;
-                    video.classList.remove('hidden');
-                    video.play();
-                    startCameraBtn.classList.add('hidden');
-                    capturePhotoBtn.classList.remove('hidden');
-                })
-                .catch(function(err) {
-                    console.error("Camera error:", err);
-                    alert("Could not access camera. Proceeding without photo capture.");
-                    // Enable form submission even without photo
-                    checkFormCompletion();
-                });
-        } else {
-            alert("Camera not supported. Proceeding without photo capture.");
-            // Enable form submission even without photo
-            checkFormCompletion();
-        }
-    }
-    
-    function capturePhoto() {
-        const context = canvas.getContext('2d');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
-        photoDataInput.value = dataURL;
-        
-        video.classList.add('hidden');
-        canvas.classList.remove('hidden');
-        capturePhotoBtn.classList.add('hidden');
-        retakePhotoBtn.classList.remove('hidden');
-        
-        checkFormCompletion();
-        
+    // Clean up webcam on page unload
+    window.addEventListener('beforeunload', function() {
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
         }
-    }
-    
-    function retakePhoto() {
-        canvas.classList.add('hidden');
-        startCameraBtn.classList.remove('hidden');
-        retakePhotoBtn.classList.add('hidden');
-        photoDataInput.value = '';
-        checkFormCompletion();
-    }
-    
-    function checkFormCompletion() {
-        const submitBtn = document.getElementById('submit-registration');
-        // Make form completion more lenient - enable button regardless
-        submitBtn.disabled = false;
-    }
-    
-    async function submitRegistrationForm(skipVerification = false) {
-        const submitBtn = document.getElementById('submit-registration');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
-        
-        try {
-            const formData = new FormData(form);
-            
-            // For debugging
-            console.log('Submitting registration form...');
-            
-            const response = await fetch('/register', {
-                method: 'POST',
-                body: formData
-            });
-            
-            // Check if response is JSON
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                const result = await response.json();
-                
-                if (!result.success) {
-                    throw new Error(result.message || 'Registration failed');
-                }
-                
-                // Show success step
-                showStep(3);
-                updateProgress(3);
-                
-                // Update UI with response data
-                document.getElementById('user-id').textContent = result.user_id || 'N/A';
-                document.getElementById('account-status').textContent = result.status === 'pending' ? 'Pending Approval' : 'Active';
-                
-                if (result.status === 'pending') {
-                    document.getElementById('success-message').textContent = 'Registration Submitted for Approval';
-                    document.getElementById('next-steps-message').textContent = 'Your registration requires admin approval. You will receive notification once approved.';
-                    document.getElementById('account-status').textContent = 'Pending Approval';
-                    document.getElementById('account-status').className = 'text-yellow-600 font-medium';
-                } else {
-                    document.getElementById('success-message').textContent = 'Registration Successful!';
-                    document.getElementById('next-steps-message').textContent = 'You can now login to your account and start using the system.';
-                }
-            } else {
-                // Handle non-JSON response (likely HTML redirect)
-                const text = await response.text();
-                if (response.ok) {
-                    // If response is OK but not JSON, assume success and show step 3
-                    showStep(3);
-                    updateProgress(3);
-                    document.getElementById('success-message').textContent = 'Registration Successful!';
-                } else {
-                    throw new Error('Server returned an error. Please try again.');
-                }
-            }
-            
-        } catch (error) {
-            console.error('Registration error:', error);
-            alert('Registration failed: ' + error.message);
-            
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Complete Registration <i class="fas fa-check ml-2"></i>';
-        }
-    }
-    
-    function showStep(step) {
-        document.querySelectorAll('.registration-step').forEach(el => el.classList.add('hidden'));
-        document.getElementById(`step-${step}`).classList.remove('hidden');
-        currentStep = step;
-    }
-    
-    function updateProgress(step) {
-        const progress = (step / 3) * 100;
-        document.getElementById('progress-bar').style.width = progress + '%';
-        document.getElementById('progress-text').textContent = `${step}/3 Steps`;
-    }
+    });
 });
 </script>
 {% endblock %}

@@ -1,466 +1,458 @@
 {% extends "base.html" %}
 
+{% block title %}Officer Dashboard - Pass4Port{% endblock %}
+
 {% block content %}
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-100">
     <!-- Header -->
-    <div class="bg-white border-b shadow-sm">
+    <header class="bg-white shadow-sm">
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    <div class="bg-indigo-600 p-2 rounded-lg">
-                        <i class="fas fa-shield-alt text-white text-xl"></i>
+                    <div class="bg-blue-600 p-2 rounded-lg">
+                        <i class="fas fa-user-tie text-white text-xl"></i>
                     </div>
                     <div>
                         <h1 class="text-xl font-bold text-gray-900">Officer Dashboard</h1>
-                        <p class="text-sm text-gray-600">{{ session.name }} - MEA Department</p>
-                        <p class="text-xs text-gray-500">Code: MEA-DEL-001</p>
+                        <p class="text-sm text-gray-600">Ministry of External Affairs</p>
+                        <p class="text-xs text-gray-500">Officer: {{ session.name }} (ID: {{ session.user_id }})</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">Account Approved</span>
-                    <button class="p-2 text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-bell"></i>
-                    </button>
-                    <button class="p-2 text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-cog"></i>
-                    </button>
-                    <a href="{{ url_for('logout') }}" class="p-2 text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="container mx-auto px-4 py-8">
-        <!-- Quick Stats -->
-        <div class="grid md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Pending Reviews</p>
-                        <p class="text-3xl font-bold text-orange-600">{{ pending_requests|length }}</p>
-                    </div>
-                    <i class="fas fa-clock text-3xl text-orange-600"></i>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Approved Today</p>
-                        <p class="text-3xl font-bold text-green-600">{{ approved_requests|length }}</p>
-                    </div>
-                    <i class="fas fa-check-circle text-3xl text-green-600"></i>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">VIP Requests</p>
-                        <p class="text-3xl font-bold text-purple-600">3</p>
-                    </div>
-                    <i class="fas fa-users text-3xl text-purple-600"></i>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">This Month</p>
-                        <p class="text-3xl font-bold text-blue-600">156</p>
-                    </div>
-                    <i class="fas fa-file-alt text-3xl text-blue-600"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabs -->
-        <div class="mb-6">
-            <div class="border-b border-gray-200">
-                <nav class="-mb-px flex space-x-8">
-                    <button class="tab-button active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600" data-tab="pending">
-                        Pending Requests
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="approved">
-                        Approved
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="rejected">
-                        Rejected
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="employees">
-                        Employees
-                    </button>
-                </nav>
-            </div>
-        </div>
-
-        <!-- Pending Requests Tab -->
-        <div id="pending-tab" class="tab-content">
-            <div class="bg-white rounded-lg shadow">
-                <div class="p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Pending Visit Requests</h3>
-                    <p class="text-sm text-gray-600">Review and approve visitor requests for your department</p>
-                </div>
-                <div class="p-6">
-                    <div class="space-y-4">
-                        {% for request in pending_requests %}
-                        <div class="border-l-4 border-l-orange-500 bg-white border rounded-lg p-6">
-                            <div class="flex items-start justify-between">
-                                <div class="space-y-3 flex-1">
-                                    <div class="flex items-center space-x-3">
-                                        <h3 class="font-semibold text-lg">{{ request.visitor_name }}</h3>
-                                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">REGULAR</span>
-                                        <span class="border border-gray-300 px-2 py-1 rounded text-xs">ID: {{ request.visitor_id }}</span>
-                                    </div>
-                                    <div class="grid md:grid-cols-2 gap-4 text-sm">
-                                        <div class="space-y-2">
-                                            <div class="flex items-center space-x-2">
-                                                <i class="fas fa-calendar text-gray-500"></i>
-                                                <span>{{ request.date }} at {{ request.time }}</span>
+                    <div class="relative">
+                        <button id="notification-btn" class="p-2 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_count > 0 %}
+                            <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{{ unread_count }}</span>
+                            {% endif %}
+                        </button>
+                        <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-10">
+                            <div class="p-3 border-b">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-semibold">Notifications</h3>
+                                    <button id="mark-all-read" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                                </div>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto">
+                                {% if notifications %}
+                                    {% for notification in notifications %}
+                                    <div class="p-3 border-b hover:bg-gray-50 {% if notification.is_read == 0 %}bg-blue-50{% endif %}">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mt-0.5">
+                                                {% if notification.type == 'success' %}
+                                                <i class="fas fa-check-circle text-green-500"></i>
+                                                {% elif notification.type == 'warning' %}
+                                                <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                                                {% elif notification.type == 'error' %}
+                                                <i class="fas fa-times-circle text-red-500"></i>
+                                                {% else %}
+                                                <i class="fas fa-info-circle text-blue-500"></i>
+                                                {% endif %}
                                             </div>
-                                            <div class="flex items-center space-x-2">
-                                                <i class="fas fa-map-marker-alt text-gray-500"></i>
-                                                <span>{{ request.department }}</span>
+                                            <div class="ml-3 w-0 flex-1">
+                                                <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
+                                                <p class="text-sm text-gray-500">{{ notification.message }}</p>
+                                                <p class="text-xs text-gray-400 mt-1">{{ notification.created_at }}</p>
                                             </div>
-                                            <div class="flex items-center space-x-2">
-                                                <i class="fas fa-user text-gray-500"></i>
-                                                <span>Contact: +91 9876543210</span>
+                                            <div class="ml-4 flex-shrink-0">
+                                                <button class="mark-read-btn text-xs text-gray-400 hover:text-gray-500" data-id="{{ notification.id }}">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
                                             </div>
                                         </div>
-                                        <div class="space-y-2">
-                                            <p><strong>Purpose:</strong> {{ request.purpose }}</p>
-                                            <p><strong>Submitted:</strong> {{ request.submitted_on }}</p>
-                                            <p><strong>Aadhaar:</strong> XXXX-XXXX-1234</p>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <div class="p-4 text-center text-gray-500">No notifications</div>
+                                {% endif %}
+                            </div>
+                            <div class="p-2 text-center border-t">
+                                <a href="#" class="text-sm text-blue-600 hover:underline">View all notifications</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <button id="settings-btn" class="p-2 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <div id="settings-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                            <div class="py-1">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Pending Requests -->
+            <div class="md:col-span-2">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold mb-4">Pending Visit Requests</h2>
+                    {% if pending_requests %}
+                        <div class="space-y-4">
+                            {% for request in pending_requests %}
+                                <div class="border rounded-lg p-4 hover:bg-gray-50">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h3 class="font-medium">{{ request.visitor_name }}</h3>
+                                            <p class="text-sm text-gray-500">ID: {{ request.visitor_id }}</p>
+                                            <p class="text-sm text-gray-500">Department: {{ request.department }}</p>
+                                            <p class="text-sm text-gray-500">Date: {{ request.date }} at {{ request.time }}</p>
+                                            <p class="text-sm text-gray-500">Purpose: {{ request.purpose }}</p>
+                                            <p class="text-xs text-gray-400 mt-1">Submitted on: {{ request.submitted_on }}</p>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="approve-btn px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700" data-request-id="{{ request.request_id }}">
+                                                <i class="fas fa-check mr-1"></i> Approve
+                                            </button>
+                                            <button class="reject-btn px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700" data-request-id="{{ request.request_id }}">
+                                                <i class="fas fa-times mr-1"></i> Reject
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex flex-col space-y-2 ml-4">
-                                    <button class="review-btn px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50" data-request-id="{{ request.id }}">
-                                        <i class="fas fa-eye mr-1"></i>
-                                        Review
-                                    </button>
-                                    <button class="approve-btn bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm rounded" data-request-id="{{ request.id }}">
-                                        <i class="fas fa-check-circle mr-1"></i>
-                                        Quick Approve
-                                    </button>
-                                    <button class="reject-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm rounded" data-request-id="{{ request.id }}">
-                                        <i class="fas fa-times-circle mr-1"></i>
-                                        Reject
-                                    </button>
-                                </div>
-                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
-                    </div>
+                    {% else %}
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-check-circle text-green-500 text-3xl mb-2"></i>
+                            <p>No pending requests</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
-        </div>
-
-        <!-- Approved Requests Tab -->
-        <div id="approved-tab" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow">
-                <div class="p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Approved Visit Requests</h3>
-                    <p class="text-sm text-gray-600">Recently approved visitor requests</p>
-                </div>
-                <div class="p-6">
-                    <div class="space-y-4">
-                        {% for request in approved_requests %}
-                        <div class="border-l-4 border-l-green-500 bg-white border rounded-lg p-6">
-                            <div class="flex items-center justify-between">
-                                <div class="space-y-2">
-                                    <div class="flex items-center space-x-3">
-                                        <h3 class="font-semibold">{{ request.visitor_name }}</h3>
-                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Approved</span>
-                                    </div>
-                                    <p class="text-sm text-gray-600">{{ request.department }}</p>
-                                    <p class="text-sm text-gray-600">{{ request.date }} at {{ request.time }}</p>
-                                    <p class="text-sm">{{ request.purpose }}</p>
+            
+            <!-- Today's Schedule -->
+            <div>
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold mb-4">Today's Schedule</h2>
+                    {% set today = now().strftime('%Y-%m-%d') %}
+                    {% set today_requests = [] %}
+                    {% for request in approved_requests %}
+                        {% if request.date == today %}
+                            {% set _ = today_requests.append(request) %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if today_requests %}
+                        <div class="space-y-3">
+                            {% for request in today_requests %}
+                                <div class="border-l-4 border-blue-500 pl-3 py-1">
+                                    <p class="font-medium">{{ request.time }} - {{ request.visitor_name }}</p>
+                                    <p class="text-sm text-gray-500">{{ request.purpose }}</p>
                                 </div>
-                                <div class="text-right space-y-2">
-                                    <p class="text-sm text-gray-600">Pass ID: PASS-2024-001</p>
-                                    <p class="text-sm text-gray-600">Approved: {{ request.submitted_on }}</p>
-                                    <button class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
-                                        <i class="fas fa-eye mr-1"></i>
-                                        View Pass
-                                    </button>
-                                </div>
-                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Rejected Tab -->
-        <div id="rejected-tab" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow">
-                <div class="p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Rejected Requests</h3>
-                    <p class="text-sm text-gray-600">Requests that have been rejected</p>
-                </div>
-                <div class="p-6">
-                    <div class="text-center py-12">
-                        <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Rejected Requests</h3>
-                        <p class="text-gray-600">All requests have been processed successfully</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Employees Tab -->
-        <div id="employees-tab" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-900">Department Employees</h3>
-                            <p class="text-sm text-gray-600">Manage employees under your department</p>
+                    {% else %}
+                        <div class="text-center py-6 text-gray-500">
+                            <i class="fas fa-calendar-check text-blue-500 text-2xl mb-2"></i>
+                            <p>No scheduled visits for today</p>
                         </div>
-                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
-                            <i class="fas fa-plus mr-2"></i>
-                            Add Employee
+                    {% endif %}
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="mt-6 bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+                    <div class="space-y-3">
+                        <button class="w-full flex items-center justify-between bg-gray-100 hover:bg-gray-200 p-3 rounded-md">
+                            <span class="flex items-center">
+                                <i class="fas fa-calendar-alt text-gray-700 mr-3"></i>
+                                <span>View Calendar</span>
+                            </span>
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </button>
+                        <button class="w-full flex items-center justify-between bg-gray-100 hover:bg-gray-200 p-3 rounded-md">
+                            <span class="flex items-center">
+                                <i class="fas fa-history text-gray-700 mr-3"></i>
+                                <span>View History</span>
+                            </span>
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </button>
+                        <button class="w-full flex items-center justify-between bg-gray-100 hover:bg-gray-200 p-3 rounded-md">
+                            <span class="flex items-center">
+                                <i class="fas fa-file-export text-gray-700 mr-3"></i>
+                                <span>Export Reports</span>
+                            </span>
+                            <i class="fas fa-chevron-right text-gray-400"></i>
                         </button>
                     </div>
                 </div>
-                <div class="p-6">
-                    <div class="mb-4">
-                        <input type="text" placeholder="Search employees..." class="w-full max-w-sm p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div class="border rounded-lg overflow-hidden">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="text-left p-4 font-medium text-gray-900">Name</th>
-                                    <th class="text-left p-4 font-medium text-gray-900">Employee ID</th>
-                                    <th class="text-left p-4 font-medium text-gray-900">Designation</th>
-                                    <th class="text-left p-4 font-medium text-gray-900">Status</th>
-                                    <th class="text-left p-4 font-medium text-gray-900">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-t">
-                                    <td class="p-4">Suresh Kumar</td>
-                                    <td class="p-4">EMP-2024-001</td>
-                                    <td class="p-4">Assistant Secretary</td>
-                                    <td class="p-4">
-                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Active</span>
-                                    </td>
-                                    <td class="p-4">
-                                        <button class="p-1 text-gray-600 hover:text-gray-900">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            </div>
+        </div>
+        
+        <!-- Approved Requests -->
+        <div class="mt-6">
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-semibold mb-4">Recently Approved Requests</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visitor</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for request in approved_requests %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ request.request_id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ request.visitor_name }} ({{ request.visitor_id }})</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ request.department }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ request.date }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ request.time }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ request.purpose }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Approved</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not approved_requests %}
+                            <tr>
+                                <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">No approved requests found</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
+</div>
 
-    <!-- Review Modal -->
-    <div id="review-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-screen overflow-y-auto">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-medium text-gray-900">Review Visit Request</h3>
-                    <button id="close-modal" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="p-6">
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
-                        <div class="text-center">
-                            <img src="/static/images/placeholder-photo.jpg" alt="Visitor Photo" class="w-32 h-32 rounded-lg mx-auto border-2 border-gray-200">
-                            <p class="text-sm text-gray-600 mt-2">Live Captured Photo</p>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold mb-2">Personal Information</h4>
-                            <div class="bg-gray-50 p-3 rounded-lg space-y-1 text-sm">
-                                <p><strong>Name:</strong> <span id="modal-visitor-name"></span></p>
-                                <p><strong>Visitor ID:</strong> <span id="modal-visitor-id"></span></p>
-                                <p><strong>Contact:</strong> +91 9876543210</p>
-                                <p><strong>Aadhaar:</strong> XXXX-XXXX-1234</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <h4 class="font-semibold mb-2">Visit Details</h4>
-                            <div class="bg-gray-50 p-3 rounded-lg space-y-1 text-sm">
-                                <p><strong>Department:</strong> <span id="modal-department"></span></p>
-                                <p><strong>Date & Time:</strong> <span id="modal-datetime"></span></p>
-                                <p><strong>Visit Type:</strong> REGULAR</p>
-                                <p><strong>Purpose:</strong> <span id="modal-purpose"></span></p>
-                            </div>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold mb-2">Documents</h4>
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                    <span class="text-sm">aadhaar_card.pdf</span>
-                                    <button class="p-1 text-gray-600 hover:text-gray-900">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="officer-remarks" class="block text-sm font-medium text-gray-700 mb-2">Officer Remarks</label>
-                            <textarea id="officer-remarks" rows="3" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Add your remarks here..."></textarea>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button id="modal-approve" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md">
-                                <i class="fas fa-check-circle mr-2"></i>
-                                Approve
-                            </button>
-                            <button id="modal-reject" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md">
-                                <i class="fas fa-times-circle mr-2"></i>
-                                Reject
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<!-- Reject Modal -->
+<div id="reject-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Reject Visit Request</h3>
+            <button id="close-reject-modal" class="text-gray-400 hover:text-gray-500">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
+        <form id="reject-form">
+            <input type="hidden" id="reject-request-id" name="requestId">
+            <div class="mb-4">
+                <label for="reject-remarks" class="block text-sm font-medium text-gray-700 mb-1">Reason for Rejection</label>
+                <textarea id="reject-remarks" name="remarks" rows="3" class="w-full px-3 py-2 border rounded-md" placeholder="Please provide a reason for rejection"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" id="cancel-reject" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Reject Request</button>
+            </div>
+        </form>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
+<!-- JavaScript for Officer Dashboard -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    let currentRequestId = null;
-    
-    // Tab functionality
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const tabName = this.getAttribute('data-tab');
-            
-            // Remove active class from all buttons
-            tabButtons.forEach(btn => {
-                btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Notification dropdown toggle
+        const notificationBtn = document.getElementById('notification-btn');
+        const notificationDropdown = document.getElementById('notification-dropdown');
+        
+        if (notificationBtn && notificationDropdown) {
+            notificationBtn.addEventListener('click', function() {
+                notificationDropdown.classList.toggle('hidden');
             });
+        }
+        
+        // Settings dropdown toggle
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsDropdown = document.getElementById('settings-dropdown');
+        
+        if (settingsBtn && settingsDropdown) {
+            settingsBtn.addEventListener('click', function() {
+                settingsDropdown.classList.toggle('hidden');
+            });
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (notificationBtn && !notificationBtn.contains(event.target) && 
+                notificationDropdown && !notificationDropdown.contains(event.target)) {
+                notificationDropdown.classList.add('hidden');
+            }
             
-            // Add active class to clicked button
-            this.classList.add('active', 'border-blue-500', 'text-blue-600');
-            this.classList.remove('border-transparent', 'text-gray-500');
-            
-            // Hide all tab contents
-            tabContents.forEach(content => content.classList.add('hidden'));
-            
-            // Show selected tab content
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            if (settingsBtn && !settingsBtn.contains(event.target) && 
+                settingsDropdown && !settingsDropdown.contains(event.target)) {
+                settingsDropdown.classList.add('hidden');
+            }
         });
-    });
-    
-    // Review button functionality
-    document.querySelectorAll('.review-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            currentRequestId = this.getAttribute('data-request-id');
-            // Populate modal with request data (simplified for demo)
-            document.getElementById('modal-visitor-name').textContent = 'Amit Kumar';
-            document.getElementById('modal-visitor-id').textContent = 'VIS-2024-001235';
-            document.getElementById('modal-department').textContent = 'Ministry of External Affairs';
-            document.getElementById('modal-datetime').textContent = '2024-01-22 at 10:00 AM';
-            document.getElementById('modal-purpose').textContent = 'Passport related inquiry';
-            
-            document.getElementById('review-modal').classList.remove('hidden');
-            document.getElementById('review-modal').classList.add('flex');
+        
+        // Mark notification as read
+        const markReadBtns = document.querySelectorAll('.mark-read-btn');
+        markReadBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const notificationId = this.getAttribute('data-id');
+                fetch('/api/mark_notification_read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ notification_id: notificationId }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the background color
+                        this.closest('.bg-blue-50').classList.remove('bg-blue-50');
+                        
+                        // Update unread count
+                        const unreadCountElement = document.querySelector('#notification-btn span');
+                        if (unreadCountElement) {
+                            const currentCount = parseInt(unreadCountElement.textContent);
+                            if (currentCount > 1) {
+                                unreadCountElement.textContent = currentCount - 1;
+                            } else {
+                                unreadCountElement.remove();
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
         });
-    });
-    
-    // Close modal
-    document.getElementById('close-modal').addEventListener('click', function() {
-        document.getElementById('review-modal').classList.add('hidden');
-        document.getElementById('review-modal').classList.remove('flex');
-    });
-    
-    // Approve button functionality
-    document.querySelectorAll('.approve-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const requestId = this.getAttribute('data-request-id');
-            approveRequest(requestId);
+        
+        // Mark all notifications as read
+        const markAllReadBtn = document.getElementById('mark-all-read');
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', function() {
+                fetch('/api/mark_all_notifications_read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove all background colors
+                        document.querySelectorAll('.bg-blue-50').forEach(el => {
+                            el.classList.remove('bg-blue-50');
+                        });
+                        
+                        // Remove unread count
+                        const unreadCountElement = document.querySelector('#notification-btn span');
+                        if (unreadCountElement) {
+                            unreadCountElement.remove();
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        }
+        
+        // Approve request
+        const approveBtns = document.querySelectorAll('.approve-btn');
+        approveBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const requestId = this.getAttribute('data-request-id');
+                
+                if (confirm('Are you sure you want to approve this visit request?')) {
+                    fetch('/api/approve_request', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ request_id: requestId }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Visit request approved successfully');
+                            // Reload page to refresh requests
+                            window.location.reload();
+                        } else {
+                            alert(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while approving request');
+                    });
+                }
+            });
         });
-    });
-    
-    // Modal approve button
-    document.getElementById('modal-approve').addEventListener('click', function() {
-        if (currentRequestId) {
-            approveRequest(currentRequestId);
+        
+        // Reject request modal
+        const rejectBtns = document.querySelectorAll('.reject-btn');
+        const rejectModal = document.getElementById('reject-modal');
+        const closeRejectModal = document.getElementById('close-reject-modal');
+        const cancelReject = document.getElementById('cancel-reject');
+        const rejectForm = document.getElementById('reject-form');
+        const rejectRequestId = document.getElementById('reject-request-id');
+        
+        rejectBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const requestId = this.getAttribute('data-request-id');
+                rejectRequestId.value = requestId;
+                rejectModal.classList.remove('hidden');
+            });
+        });
+        
+        if (closeRejectModal) {
+            closeRejectModal.addEventListener('click', function() {
+                rejectModal.classList.add('hidden');
+            });
+        }
+        
+        if (cancelReject) {
+            cancelReject.addEventListener('click', function() {
+                rejectModal.classList.add('hidden');
+            });
+        }
+        
+        if (rejectForm) {
+            rejectForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const requestId = rejectRequestId.value;
+                const remarks = document.getElementById('reject-remarks').value.trim();
+                
+                if (!remarks) {
+                    alert('Please provide a reason for rejection');
+                    return;
+                }
+                
+                fetch('/api/reject_request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        request_id: requestId,
+                        remarks: remarks
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Visit request rejected successfully');
+                        rejectModal.classList.add('hidden');
+                        // Reload page to refresh requests
+                        window.location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while rejecting request');
+                });
+            });
         }
     });
-    
-    // Reject button functionality
-    document.querySelectorAll('.reject-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const requestId = this.getAttribute('data-request-id');
-            rejectRequest(requestId);
-        });
-    });
-    
-    // Modal reject button
-    document.getElementById('modal-reject').addEventListener('click', function() {
-        if (currentRequestId) {
-            const remarks = document.getElementById('officer-remarks').value;
-            rejectRequest(currentRequestId, remarks);
-        }
-    });
-    
-    function approveRequest(requestId) {
-        fetch('/api/approve_request', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ request_id: requestId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Request approved successfully!');
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while approving the request.');
-        });
-    }
-    
-    function rejectRequest(requestId, remarks = '') {
-        fetch('/api/reject_request', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ request_id: requestId, remarks: remarks })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Request rejected successfully!');
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while rejecting the request.');
-        });
-    }
-});
 </script>
 {% endblock %}

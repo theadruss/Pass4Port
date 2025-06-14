@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}Pass4Port - Secure Visitor Management System{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600 p-2 rounded-lg">
+                        <i class="fas fa-shield-alt text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Pass4Port</h1>
+                        <p class="text-xs text-gray-600">Visitor Management System</p>
+                    </div>
+                </div>
+                <div class="hidden md:flex space-x-6">
+                    <a href="#features" class="text-gray-700 hover:text-blue-600">Features</a>
+                    <a href="#benefits" class="text-gray-700 hover:text-blue-600">Benefits</a>
+                    <a href="#security" class="text-gray-700 hover:text-blue-600">Security</a>
+                    <a href="#contact" class="text-gray-700 hover:text-blue-600">Contact</a>
+                </div>
+                <div class="flex space-x-3">
+                    <a href="{{ url_for('login') }}" class="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50">Login</a>
+                    <a href="{{ url_for('register') }}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Register</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="container mx-auto px-4 py-16">
+        <div class="flex flex-col md:flex-row items-center">
+            <div class="md:w-1/2 mb-8 md:mb-0">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Secure Access Management for Government Facilities</h1>
+                <p class="text-xl text-gray-600 mb-8">Pass4Port provides a comprehensive solution for managing visitor access with advanced security features including Aadhaar verification and facial recognition.</p>
+                <div class="flex space-x-4">
+                    <a href="{{ url_for('login') }}" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 shadow-md">Get Started</a>
+                    <a href="#features" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">Learn More</a>
+                </div>
+            </div>
+            <div class="md:w-1/2">
+                <img src="{{ url_for('static', filename='images/hero-image.png') }}" alt="Visitor Management System" class="rounded-lg shadow-xl">
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div id="features" class="bg-white py-16">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Key Features</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Our system provides comprehensive visitor management with advanced security features.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-blue-50 p-6 rounded-lg">
+                    <div class="bg-blue-100 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <i class="fas fa-id-card text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Aadhaar Integration</h3>
+                    <p class="text-gray-600">Secure visitor verification using Aadhaar numbers with privacy-focused masking.</p>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-lg">
+                    <div class="bg-blue-100 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <i class="fas fa-camera text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Facial Recognition</h3>
+                    <p class="text-gray-600">Advanced facial recognition to verify visitor identity at entry points.</p>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-lg">
+                    <div class="bg-blue-100 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <i class="fas fa-clipboard-check text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Visit Approval Workflow</h3>
+                    <p class="text-gray-600">Streamlined process for requesting, approving, and tracking visitor access.</p>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-lg">
+                    <div class="bg-blue-100 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <i class="fas fa-shield-alt text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Security Monitoring</h3>
+                    <p class="text-gray-600">Real-time tracking of visitor entry and exit with comprehensive logs.</p>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-lg">
+                    <div class="bg-blue-100 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <i class="fas fa-chart-bar text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Analytics Dashboard</h3>
+                    <p class="text-gray-600">Comprehensive reporting and analytics for facility access patterns.</p>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-lg">
+                    <div class="bg-blue-100 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                        <i class="fas fa-bell text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Notifications</h3>
+                    <p class="text-gray-600">Automated alerts for visit approvals, rejections, and security concerns.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Benefits Section -->
+    <div id="benefits" class="bg-gray-50 py-16">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Benefits</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Pass4Port enhances security while streamlining the visitor management process.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">For Government Facilities</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Enhanced security with multi-factor verification</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Streamlined visitor processing reduces wait times</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Comprehensive audit trails for compliance</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Reduced administrative burden on security personnel</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Real-time monitoring of facility occupancy</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">For Visitors</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Faster check-in process with pre-registration</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Transparent approval process with status updates</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Secure handling of personal information</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Digital record of past and upcoming visits</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Simplified repeat visits with stored information</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Section -->
+    <div id="security" class="bg-white py-16">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-8 md:mb-0 md:pr-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">Advanced Security Features</h2>
+                    <p class="text-lg text-gray-600 mb-6">Pass4Port implements multiple layers of security to ensure only authorized individuals gain access to sensitive facilities.</p>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 p-2 rounded-full mr-4">
+                                <i class="fas fa-fingerprint text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Biometric Verification</h3>
+                                <p class="text-gray-600">Facial recognition ensures the person requesting entry matches their registration photo.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 p-2 rounded-full mr-4">
+                                <i class="fas fa-id-card text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Aadhaar Verification</h3>
+                                <p class="text-gray-600">Integration with Aadhaar provides an additional layer of identity verification.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 p-2 rounded-full mr-4">
+                                <i class="fas fa-ban text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">Blacklist Screening</h3>
+                                <p class="text-gray-600">Automatic screening against blacklisted individuals prevents unauthorized access.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="md:w-1/2">
+                    <img src="{{ url_for('static', filename='images/security-features.png') }}" alt="Security Features" class="rounded-lg shadow-xl">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    <div id="contact" class="bg-gray-50 py-16">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Contact Us</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Have questions about Pass4Port? Our team is here to help.</p>
+            </div>
+
+            <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="md:flex">
+                    <div class="md:w-1/2 bg-blue-600 p-8 text-white">
+                        <h3 class="text-2xl font-bold mb-4">Get in Touch</h3>
+                        <p class="mb-6">Fill out the form and our team will get back to you within 24 hours.</p>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <i class="fas fa-map-marker-alt mr-4 mt-1"></i>
+                                <span>123 Government Complex, New Delhi, India</span>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <i class="fas fa-phone mr-4 mt-1"></i>
+                                <span>+91 11 2345 6789</span>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <i class="fas fa-envelope mr-4 mt-1"></i>
+                                <span>info@pass4port.gov.in</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="md:w-1/2 p-8">
+                        <form id="contact-form" class="space-y-4">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <input type="text" id="name" name="name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                <input type="email" id="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                                <input type="text" id="subject" name="subject" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                <textarea id="message" name="message" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200">Send Message</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonials -->
+    <div class="bg-white py-16">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Trusted by Government Agencies</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">See what our clients have to say about Pass4Port.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-gray-50 p-6 rounded-lg shadow">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-gray-300 mr-4"></div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Rajesh Kumar</h4>
+                            <p class="text-sm text-gray-600">Security Director, Ministry of External Affairs</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">"Pass4Port has revolutionized our visitor management process. The facial recognition and Aadhaar integration provide robust security while streamlining the check-in process."</p>
+                </div>
+
+                <div class="bg-gray-50 p-6 rounded-lg shadow">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-gray-300 mr-4"></div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Priya Sharma</h4>
+                            <p class="text-sm text-gray-600">Administrative Officer, Ministry of Home Affairs</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">"The approval workflow has significantly reduced our administrative burden. Officers can quickly review and approve visit requests, and security staff have all the information they need."</p>
+                </div>
+
+                <div class="bg-gray-50 p-6 rounded-lg shadow">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-full bg-gray-300 mr-4"></div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Amit Patel</h4>
+                            <p class="text-sm text-gray-600">IT Director, Central Government Services</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">"The system's robust security features and intuitive interface have made it an essential tool for our facility. The analytics dashboard provides valuable insights for resource planning."</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                window.scrollTo({
+                    top: targetElement.offsetTop - 80,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+    
+    // Contact form submission
+    const contactForm = document.getElementById('contact-form');
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Simulate form submission
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+            
+            setTimeout(() => {
+                alert('Thank you for your message! Our team will contact you soon.');
+                this.reset();
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Send Message';
+            }, 1500);
+        });
+    }
+});
+</script>
+{% endblock %}

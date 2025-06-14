@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 
+{% block title %}Security Dashboard - Pass4Port{% endblock %}
+
 {% block content %}
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-100">
     <!-- Header -->
-    <div class="bg-white border-b shadow-sm">
+    <header class="bg-white shadow-sm">
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
@@ -18,510 +20,667 @@
                 </div>
                 <div class="flex items-center space-x-4">
                     <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">On Duty</span>
-                    <button class="p-2 text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-bell"></i>
-                    </button>
-                    <button class="p-2 text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-cog"></i>
-                    </button>
-                    <a href="{{ url_for('logout') }}" class="p-2 text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="container mx-auto px-4 py-8">
-        <!-- Quick Stats -->
-        <div class="grid md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Today's Entries</p>
-                        <p class="text-3xl font-bold text-blue-600">24</p>
-                    </div>
-                    <i class="fas fa-sign-in-alt text-3xl text-blue-600"></i>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Currently Inside</p>
-                        <p class="text-3xl font-bold text-green-600">{{ entry_logs|selectattr('status', 'equalto', 'inside')|list|length }}</p>
-                    </div>
-                    <i class="fas fa-users text-3xl text-green-600"></i>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Exits Today</p>
-                        <p class="text-3xl font-bold text-orange-600">{{ entry_logs|selectattr('status', 'equalto', 'exited')|list|length }}</p>
-                    </div>
-                    <i class="fas fa-sign-out-alt text-3xl text-orange-600"></i>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Alerts</p>
-                        <p class="text-3xl font-bold text-red-600">0</p>
-                    </div>
-                    <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabs -->
-        <div class="mb-6">
-            <div class="border-b border-gray-200">
-                <nav class="-mb-px flex space-x-8">
-                    <button class="tab-button active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600" data-tab="entry">
-                        Entry/Exit
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="logs">
-                        Entry Logs
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="search">
-                        Search
-                    </button>
-                    <button class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="alerts">
-                        Alerts
-                    </button>
-                </nav>
-            </div>
-        </div>
-
-        <!-- Entry/Exit Tab -->
-        <div id="entry-tab" class="tab-content">
-            <div class="grid md:grid-cols-2 gap-6">
-                <!-- Verification Panel -->
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Visitor Verification</h3>
-                        <p class="text-sm text-gray-600">Scan QR code or use facial recognition to verify visitors</p>
-                    </div>
-                    <div class="p-6 space-y-6">
-                        <div class="flex space-x-4">
-                            <button id="qr-scan-btn" class="scan-mode-btn active flex-1 bg-blue-600 text-white py-2 px-4 rounded-md">
-                                <i class="fas fa-qrcode mr-2"></i>
-                                QR Scan
-                            </button>
-                            <button id="face-scan-btn" class="scan-mode-btn flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50">
-                                <i class="fas fa-camera mr-2"></i>
-                                Face Scan
-                            </button>
-                        </div>
-
-                        <div id="scanner-area" class="bg-gray-100 rounded-lg p-8 text-center min-h-[300px] flex flex-col items-center justify-center">
-                            <div id="qr-scanner" class="scanner-mode">
-                                <i class="fas fa-qrcode text-6xl text-gray-400 mb-4"></i>
-                                <p class="text-gray-600 mb-4">Position QR code in the scanner</p>
-                                <button id="start-qr-scan" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md">
-                                    Start QR Scan
-                                </button>
-                            </div>
-
-                            <div id="face-scanner" class="scanner-mode hidden">
-                                <i class="fas fa-camera text-6xl text-gray-400 mb-4"></i>
-                                <p class="text-gray-600 mb-4">Position visitor in front of camera</p>
-                                <button id="start-face-scan" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md">
-                                    Start Face Scan
-                                </button>
-                            </div>
-
-                            <div id="scanning-state" class="scanner-mode hidden">
-                                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                                <p class="text-blue-600 font-semibold">Verifying...</p>
-                            </div>
-
-                            <div id="verified-state" class="scanner-mode hidden">
-                                <i class="fas fa-check-circle text-6xl text-green-600 mb-4"></i>
-                                <p class="text-green-600 font-semibold mb-4">Verification Successful!</p>
-                                <div class="bg-white p-4 rounded-lg border mb-4">
-                                    <p class="font-medium">Rahul Sharma</p>
-                                    <p class="text-sm text-gray-600">Pass ID: PASS-2024-001</p>
-                                    <p class="text-sm text-gray-600">Ministry of External Affairs</p>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <button id="mark-entry-btn" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md">
-                                        <i class="fas fa-sign-in-alt mr-2"></i>
-                                        Mark Entry
-                                    </button>
-                                    <button id="mark-exit-btn" class="border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50">
-                                        <i class="fas fa-sign-out-alt mr-2"></i>
-                                        Mark Exit
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Manual Entry -->
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Manual Entry</h3>
-                        <p class="text-sm text-gray-600">Manual visitor entry for emergency situations</p>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <form id="manual-entry-form">
-                            <div class="space-y-4">
-                                <div>
-                                    <label for="passId" class="block text-sm font-medium text-gray-700 mb-2">Pass ID</label>
-                                    <input type="text" id="passId" name="passId" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter pass ID">
-                                </div>
-                                <div>
-                                    <label for="visitorName" class="block text-sm font-medium text-gray-700 mb-2">Visitor Name</label>
-                                    <input type="text" id="visitorName" name="visitorName" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter visitor name">
-                                </div>
-                                <div>
-                                    <label for="department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                                    <select id="department" name="department" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">Select department</option>
-                                        <option value="Ministry of External Affairs">Ministry of External Affairs</option>
-                                        <option value="Ministry of Home Affairs">Ministry of Home Affairs</option>
-                                        <option value="Prime Minister's Office">Prime Minister's Office</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="action" class="block text-sm font-medium text-gray-700 mb-2">Action</label>
-                                    <select id="action" name="action" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="">Select action</option>
-                                        <option value="entry">Mark Entry</option>
-                                        <option value="exit">Mark Exit</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <button type="submit" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md">
-                                Submit Manual Entry
-                            </button>
-                        </form>
-
-                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-6">
-                            <div class="flex items-start space-x-2">
-                                <i class="fas fa-exclamation-triangle text-amber-600 mt-1"></i>
-                                <div class="text-sm text-amber-700">
-                                    <p class="font-medium">Manual Entry Notice</p>
-                                    <p>Manual entries are logged and require supervisor approval. Use only in emergency situations.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Entry Logs Tab -->
-        <div id="logs-tab" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-900">Today's Entry Logs</h3>
-                            <p class="text-sm text-gray-600">Real-time visitor entry and exit records</p>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
-                                <i class="fas fa-filter mr-1"></i>
-                                Filter
-                            </button>
-                            <button class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">
-                                <i class="fas fa-download mr-1"></i>
-                                Export
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-6">
-                    <div class="space-y-4">
-                        {% for log in entry_logs %}
-                        <div class="border-l-4 border-l-blue-500 bg-white border rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-4">
-                                    <img src="/static/images/placeholder-photo.jpg" alt="{{ log.visitor_name }}" class="w-12 h-12 rounded-full border-2 border-gray-200">
-                                    <div>
-                                        <h3 class="font-semibold">{{ log.visitor_name }}</h3>
-                                        <p class="text-sm text-gray-600">{{ log.department }}</p>
-                                        <p class="text-sm text-gray-600">Pass ID: {{ log.id }}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right space-y-2">
-                                    <div class="flex items-center space-x-4">
-                                        <div class="text-sm">
-                                            <p class="text-gray-600">Entry: {{ log.entry_time }}</p>
-                                            {% if log.exit_time %}
-                                            <p class="text-gray-600">Exit: {{ log.exit_time }}</p>
-                                            {% endif %}
-                                        </div>
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full
-                                            {% if log.status == 'inside' %}bg-blue-100 text-blue-800
-                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                            {% if log.status == 'inside' %}Inside{% else %}Exited{% endif %}
-                                        </span>
-                                    </div>
-                                    {% if log.status == 'inside' %}
-                                    <button class="mark-exit-btn px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50" data-pass-id="{{ log.id }}">
-                                        <i class="fas fa-sign-out-alt mr-1"></i>
-                                        Mark Exit
-                                    </button>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Search Tab -->
-        <div id="search-tab" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow">
-                <div class="p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Search Visitor Records</h3>
-                    <p class="text-sm text-gray-600">Search historical visitor logs by various criteria</p>
-                </div>
-                <div class="p-6 space-y-6">
-                    <form id="search-form">
-                        <div class="grid md:grid-cols-4 gap-4">
-                            <div>
-                                <label for="searchName" class="block text-sm font-medium text-gray-700 mb-2">Visitor Name</label>
-                                <input type="text" id="searchName" name="searchName" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter name">
-                            </div>
-                            <div>
-                                <label for="searchPassId" class="block text-sm font-medium text-gray-700 mb-2">Pass ID</label>
-                                <input type="text" id="searchPassId" name="searchPassId" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Enter pass ID">
-                            </div>
-                            <div>
-                                <label for="searchDept" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                                <select id="searchDept" name="searchDept" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">All departments</option>
-                                    <option value="Ministry of External Affairs">Ministry of External Affairs</option>
-                                    <option value="Ministry of Home Affairs">Ministry of Home Affairs</option>
-                                    <option value="Prime Minister's Office">Prime Minister's Office</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="searchDate" class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-                                <select id="searchDate" name="searchDate" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">Select range</option>
-                                    <option value="today">Today</option>
-                                    <option value="week">This Week</option>
-                                    <option value="month">This Month</option>
-                                    <option value="custom">Custom Range</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button type="submit" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md">
-                            <i class="fas fa-search mr-2"></i>
-                            Search Records
+                    <div class="relative">
+                        <button id="notification-btn" class="p-2 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_count > 0 %}
+                            <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{{ unrea_count }}</span>
+                            {% endif %}
                         </button>
-                    </form>
-
-                    <div class="border rounded-lg">
-                        <div class="p-4 bg-gray-50 border-b">
-                            <h3 class="font-semibold">Search Results</h3>
+                        <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-10">
+                            <div class="p-3 border-b">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="font-semibold">Notifications</h3>
+                                    <button id="mark-all-read" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                                </div>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto">
+                                {% if notifications %}
+                                    {% for notification in notifications %}
+                                    <div class="p-3 border-b hover:bg-gray-50 {% if notification.is_read == 0 %}bg-blue-50{% endif %}">
+                                        <div class="flex items-start">
+                                            <div class="flex-shrink-0 mt-0.5">
+                                                {% if notification.type == 'success' %}
+                                                <i class="fas fa-check-circle text-green-500"></i>
+                                                {% elif notification.type == 'warning' %}
+                                                <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                                                {% elif notification.type == 'error' %}
+                                                <i class="fas fa-times-circle text-red-500"></i>
+                                                {% else %}
+                                                <i class="fas fa-info-circle text-blue-500"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="ml-3 w-0 flex-1">
+                                                <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
+                                                <p class="text-sm text-gray-500">{{ notification.message }}p>
+                                                <p class="text-xs text-gray-400 mt-1">{{ notification.created_at }}</p>
+                                            </div>
+                                            <div class="ml-4 flex-shrink-0">
+                                                <button class="mark-read-btn text-xs text-gray-400 hover:text-gray-500" data-id="{{ notification.id }}">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <div class="p-4 text-center text-gray-500">No notifications</div>
+                                {% endif %}
+                            </div>
+                            <div class="p-2 text-center border-t">
+                                <a href="#" class="text-sm text-blue-600 hover:underline">View all notifications</a>
+                            </div>
                         </div>
-                        <div class="p-8 text-center text-gray-500">
-                            <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
-                            <p>Enter search criteria and click search to view results</p>
+                    </div>
+                    <div class="relative">
+                        <button id="settings-btn" class="p-2 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <div id="settings-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                            <div class="py-1">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </header>
 
-        <!-- Alerts Tab -->
-        <div id="alerts-tab" class="tab-content hidden">
-            <div class="bg-white rounded-lg shadow">
-                <div class="p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">Security Alerts</h3>
-                    <p class="text-sm text-gray-600">System alerts and notifications</p>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Visitor Verification -->
+            <div class="md:col-span-2">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold mb-4">Visitor Verification</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Aadhaar Verification -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-medium mb-3">Verify by Aadhaar</h3>
+                            <form id="aadhaar-verification-form">
+                                <div class="mb-4">
+                                    <label for="aadhaar" class="block text-sm font-medium text-gray-700 mb-1">Aadhaar Number</label>
+                                    <input type="text" id="aadhaar" name="aadhaar" class="w-full px-3 py-2 border rounded-md" placeholder="Enter 12-digit Aadhaar number" maxlength="12">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Capture Photo</label>
+                                    <div class="relative">
+                                        <div id="camera-container" class="w-full h-48 bg-gray-100 border rounded-md flex items-center justify-center">
+                                            <video id="video" class="hidden w-full h-full object-cover rounded-md"></video>
+                                            <canvas id="canvas" class="hidden w-full h-full object-cover rounded-md"></canvas>
+                                            <div id="camera-placeholder" class="text-center">
+                                                <i class="fas fa-camera text-gray-400 text-3xl mb-2"></i>
+                                                <p class="text-sm text-gray-500">Camera will appear here</p>
+                                            </div>
+                                        </div>
+                                        <div class="absolute bottom-2 right-2 flex space-x-2">
+                                            <button type="button" id="start-camera" class="bg-blue-600 text-white p-1 rounded-full">
+                                                <i class="fas fa-video"></i>
+                                            </button>
+                                            <button type="button" id="capture-photo" class="bg-green-600 text-white p-1 rounded-full hidden">
+                                                <i class="fas fa-camera"></i>
+                                            </button>
+                                            <button type="button" id="retake-photo" class="bg-yellow-600 text-white p-1 rounded-full hidden">
+                                                <i class="fas fa-redo"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Verify Visitor</button>
+                            </form>
+                        </div>
+                        
+                        <!-- Verification Results -->
+                        <div id="verification-results" class="border rounded-lg p-4 hidden">
+                            <h3 class="font-medium mb-3">Verification Results</h3>
+                            <div id="visitor-details" class="space-y-3">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            <div class="mt-4 space-y-2">
+                                <button id="record-entry-btn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">Record Entry</button>
+                                <button id="deny-entry-btn" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700">Deny Entry</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-6">
-                    <div class="text-center py-12">
-                        <i class="fas fa-check-circle text-6xl text-green-600 mb-4"></i>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">All Clear</h3>
-                        <p class="text-gray-600">No security alerts at this time</p>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div>
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+                    <div class="space-y-3">
+                        <button id="scan-qr-btn" class="w-full flex items-center justify-between bg-gray-100 hover:bg-gray-200 p-3 rounded-md">
+                            <span class="flex items-center">
+                                <i class="fas fa-qrcode text-gray-700 mr-3"></i>
+                                <span>Scan QR Code</span>
+                            </span>
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </button>
+                        <button id="record-exit-btn" class="w-full flex items-center justify-between bg-gray-100 hover:bg-gray-200 p-3 rounded-md">
+                            <span class="flex items-center">
+                                <i class="fas fa-sign-out-alt text-gray-700 mr-3"></i>
+                                <span>Record Exit</span>
+                            </span>
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </button>
+                        <button id="emergency-btn" class="w-full flex items-center justify-between bg-red-100 hover:bg-red-200 p-3 rounded-md">
+                            <span class="flex items-center">
+                                <i class="fas fa-exclamation-triangle text-red-700 mr-3"></i>
+                                <span class="text-red-700">Emergency Alert</span>
+                            </span>
+                            <i class="fas fa-chevron-right text-red-400"></i>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <!-- Entry Logs -->
+        <div class="mt-6">
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-semibold mb-4">Recent Entry Logs</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pass ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visitor</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aadhaar</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry Time</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exit Time</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for log in entry_logs %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ log.pass_id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.visitor_name }} ({{ log.visitor_id }})</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.department }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.masked_aadhaar }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.entry_time }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.exit_time if log.exit_time else '-' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if log.status == 'inside' %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Inside</span>
+                                    {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Exited</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {% if log.status == 'inside' %}
+                                    <button class="record-exit-btn text-blue-600 hover:text-blue-800" data-pass-id="{{ log.pass_id }}">Record Exit</button>
+                                    {% else %}
+                                    <button class="view-details-btn text-gray-600 hover:text-gray-800" data-pass-id="{{ log.pass_id }}">View Details</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not entry_logs %}
+                            <tr>
+                                <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">No entry logs found</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Exit Modal -->
+<div id="exit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Record Visitor Exit</h3>
+            <button id="close-exit-modal" class="text-gray-400 hover:text-gray-500">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="exit-form">
+            <div class="mb-4">
+                <label for="exit-pass-id" class="block text-sm font-medium text-gray-700 mb-1">Pass ID</label>
+                <input type="text" id="exit-pass-id" name="passId" class="w-full px-3 py-2 border rounded-md" placeholder="Enter Pass ID">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="button" id="cancel-exit" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Record Exit</button>
+            </div>
+        </form>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
+<!-- JavaScript for Security Dashboard -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    let currentScanMode = 'qr';
-    
-    // Tab functionality
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const tabName = this.getAttribute('data-tab');
-            
-            // Remove active class from all buttons
-            tabButtons.forEach(btn => {
-                btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Notification dropdown toggle
+        const notificationBtn = document.getElementById('notification-btn');
+        const notificationDropdown = document.getElementById('notification-dropdown');
+        
+        if (notificationBtn && notificationDropdown) {
+            notificationBtn.addEventListener('click', function() {
+                notificationDropdown.classList.toggle('hidden');
             });
-            
-            // Add active class to clicked button
-            this.classList.add('active', 'border-blue-500', 'text-blue-600');
-            this.classList.remove('border-transparent', 'text-gray-500');
-            
-            // Hide all tab contents
-            tabContents.forEach(content => content.classList.add('hidden'));
-            
-            // Show selected tab content
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
-        });
-    });
-    
-    // Scan mode buttons
-    document.getElementById('qr-scan-btn').addEventListener('click', function() {
-        currentScanMode = 'qr';
-        updateScanMode();
-    });
-    
-    document.getElementById('face-scan-btn').addEventListener('click', function() {
-        currentScanMode = 'face';
-        updateScanMode();
-    });
-    
-    function updateScanMode() {
-        // Update button styles
-        document.querySelectorAll('.scan-mode-btn').forEach(btn => {
-            btn.classList.remove('bg-blue-600', 'text-white');
-            btn.classList.add('border', 'border-gray-300', 'text-gray-700');
-        });
-        
-        if (currentScanMode === 'qr') {
-            document.getElementById('qr-scan-btn').classList.add('bg-blue-600', 'text-white');
-            document.getElementById('qr-scan-btn').classList.remove('border', 'border-gray-300', 'text-gray-700');
-        } else {
-            document.getElementById('face-scan-btn').classList.add('bg-blue-600', 'text-white');
-            document.getElementById('face-scan-btn').classList.remove('border', 'border-gray-300', 'text-gray-700');
         }
         
-        // Show appropriate scanner
-        document.querySelectorAll('.scanner-mode').forEach(mode => mode.classList.add('hidden'));
-        document.getElementById(currentScanMode + '-scanner').classList.remove('hidden');
-    }
-    
-    // Start scanning
-    document.getElementById('start-qr-scan').addEventListener('click', startScanning);
-    document.getElementById('start-face-scan').addEventListener('click', startScanning);
-    
-    function startScanning() {
-        // Show scanning state
-        document.querySelectorAll('.scanner-mode').forEach(mode => mode.classList.add('hidden'));
-        document.getElementById('scanning-state').classList.remove('hidden');
+        // Settings dropdown toggle
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsDropdown = document.getElementById('settings-dropdown');
         
-        // Simulate scanning process
-        setTimeout(() => {
-            document.getElementById('scanning-state').classList.add('hidden');
-            document.getElementById('verified-state').classList.remove('hidden');
-        }, 2000);
-    }
-    
-    // Mark entry/exit buttons
-    document.getElementById('mark-entry-btn').addEventListener('click', function() {
-        markEntry('PASS-2024-001', 'Rahul Sharma', 'Ministry of External Affairs');
-    });
-    
-    document.getElementById('mark-exit-btn').addEventListener('click', function() {
-        markExit('PASS-2024-001');
-    });
-    
-    // Mark exit buttons in logs
-    document.querySelectorAll('.mark-exit-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const passId = this.getAttribute('data-pass-id');
-            markExit(passId);
-        });
-    });
-    
-    function markEntry(passId, visitorName, department) {
-        fetch('/api/mark_entry', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                pass_id: passId,
-                visitor_name: visitorName,
-                department: department
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Entry marked successfully!');
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
+        if (settingsBtn && settingsDropdown) {
+            settingsBtn.addEventListener('click', function() {
+                settingsDropdown.classList.toggle('hidden');
+            });
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (notificationBtn && !notificationBtn.contains(event.target) && 
+                notificationDropdown && !notificationDropdown.contains(event.target)) {
+                notificationDropdown.classList.add('hidden');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while marking entry.');
-        });
-    }
-    
-    function markExit(passId) {
-        fetch('/api/mark_exit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                pass_id: passId
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Exit marked successfully!');
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
+            
+            if (settingsBtn && !settingsBtn.contains(event.target) && 
+                settingsDropdown && !settingsDropdown.contains(event.target)) {
+                settingsDropdown.classList.add('hidden');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while marking exit.');
         });
-    }
-    
-    // Manual entry form
-    document.getElementById('manual-entry-form').addEventListener('submit', function(e) {
-        e.preventDefault();
         
-        const formData = new FormData(this);
-        const data = Object.fromEntries(formData);
+        // Mark notification as read
+        const markReadBtns = document.querySelectorAll('.mark-read-btn');
+        markReadBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const notificationId = this.getAttribute('data-id');
+                fetch('/api/mark_notification_read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ notification_id: notificationId }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the background color
+                        this.closest('.bg-blue-50').classList.remove('bg-blue-50');
+                        
+                        // Update unread count
+                        const unreadCountElement = document.querySelector('#notification-btn span');
+                        if (unreadCountElement) {
+                            const currentCount = parseInt(unreadCountElement.textContent);
+                            if (currentCount > 1) {
+                                unreadCountElement.textContent = currentCount - 1;
+                            } else {
+                                unreadCountElement.remove();
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
         
-        if (data.action === 'entry') {
-            markEntry(data.passId, data.visitorName, data.department);
-        } else if (data.action === 'exit') {
-            markExit(data.passId);
+        // Mark all notifications as read
+        const markAllReadBtn = document.getElementById('mark-all-read');
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', function() {
+                fetch('/api/mark_all_notifications_read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove all background colors
+                        document.querySelectorAll('.bg-blue-50').forEach(el => {
+                            el.classList.remove('bg-blue-50');
+                        });
+                        
+                        // Remove unread count
+                        const unreadCountElement = document.querySelector('#notification-btn span');
+                        if (unreadCountElement) {
+                            unreadCountElement.remove();
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        }
+        
+        // Camera functionality
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startCameraBtn = document.getElementById('start-camera');
+        const capturePhotoBtn = document.getElementById('capture-photo');
+        const retakePhotoBtn = document.getElementById('retake-photo');
+        const cameraPlaceholder = document.getElementById('camera-placeholder');
+        
+        let stream = null;
+        let photoData = null;
+        
+        if (startCameraBtn) {
+            startCameraBtn.addEventListener('click', function() {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(function(mediaStream) {
+                            stream = mediaStream;
+                            video.srcObject = mediaStream;
+                            video.play();
+                            
+                            // Show video and capture button
+                            video.classList.remove('hidden');
+                            capturePhotoBtn.classList.remove('hidden');
+                            cameraPlaceholder.classList.add('hidden');
+                            startCameraBtn.classList.add('hidden');
+                        })
+                        .catch(function(error) {
+                            console.error('Error accessing camera:', error);
+                            alert('Could not access camera. Please check permissions.');
+                        });
+                } else {
+                    alert('Your browser does not support camera access.');
+                }
+            });
+        }
+        
+        if (capturePhotoBtn) {
+            capturePhotoBtn.addEventListener('click', function() {
+                // Draw video frame to canvas
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Get image data
+                photoData = canvas.toDataURL('image/jpeg');
+                
+                // Show canvas and retake button
+                canvas.classList.remove('hidden');
+                retakePhotoBtn.classList.remove('hidden');
+                video.classList.add('hidden');
+                capturePhotoBtn.classList.add('hidden');
+                
+                // Stop camera stream
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            });
+        }
+        
+        if (retakePhotoBtn) {
+            retakePhotoBtn.addEventListener('click', function() {
+                // Clear photo data
+                photoData = null;
+                
+                // Show start camera button
+                startCameraBtn.classList.remove('hidden');
+                canvas.classList.add('hidden');
+                retakePhotoBtn.classList.add('hidden');
+                cameraPlaceholder.classList.remove('hidden');
+            });
+        }
+        
+        // Aadhaar verification form
+        const aadhaarVerificationForm = document.getElementById('aadhaar-verification-form');
+        const verificationResults = document.getElementById('verification-results');
+        const visitorDetails = document.getElementById('visitor-details');
+        const recordEntryBtn = document.getElementById('record-entry-btn');
+        const denyEntryBtn = document.getElementById('deny-entry-btn');
+        
+        let verifiedVisitor = null;
+        
+        if (aadhaarVerificationForm) {
+            aadhaarVerificationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const aadhaar = document.getElementById('aadhaar').value.trim();
+                
+                if (!aadhaar) {
+                    alert('Please enter Aadhaar number');
+                    return;
+                }
+                
+                // Validate Aadhaar format (12 digits)
+                if (!/^\d{12}$/.test(aadhaar.replace(/\s/g, ''))) {
+                    alert('Please enter a valid 12-digit Aadhaar number');
+                    return;
+                }
+                
+                // Call API to verify visitor
+                fetch('/api/verify_visitor', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        aadhaar: aadhaar,
+                        photoData: photoData
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show verification results
+                        verificationResults.classList.remove('hidden');
+                        
+                        // Store verified visitor data
+                        verifiedVisitor = data.visitor;
+                        verifiedVisitor.aadhaar = aadhaar; // Store original Aadhaar for entry recording
+                        
+                        // Display visitor details
+                        let faceVerificationClass = verifiedVisitor.face_verified ? 'text-green-600' : 'text-red-600';
+                        let faceVerificationIcon = verifiedVisitor.face_verified ? 'fa-check-circle' : 'fa-times-circle';
+                        let faceVerificationText = verifiedVisitor.face_verified ? 'Face Verified' : 'Face Not Verified';
+                        
+                        let hasApprovedVisitsClass = verifiedVisitor.has_approved_visits ? 'text-green-600' : 'text-yellow-600';
+                        let hasApprovedVisitsIcon = verifiedVisitor.has_approved_visits ? 'fa-check-circle' : 'fa-exclamation-circle';
+                        let hasApprovedVisitsText = verifiedVisitor.has_approved_visits ? 'Has Approved Visits' : 'No Approved Visits';
+                        
+                        visitorDetails.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium">${verifiedVisitor.name}</h4>
+                                    <p class="text-sm text-gray-500">ID: ${verifiedVisitor.user_id}</p>
+                                    <p class="text-sm text-gray-500">Aadhaar: ${verifiedVisitor.masked_aadhaar}</p>
+                                </div>
+                                ${verifiedVisitor.photo_url ? `
+                                <div class="w-16 h-16 rounded-full overflow-hidden">
+                                    <img src="${verifiedVisitor.photo_url}" alt="Visitor" class="w-full h-full object-cover">
+                                </div>
+                                ` : ''}
+                            </div>
+                            <div class="flex items-center space-x-2 text-sm">
+                                <i class="fas ${faceVerificationIcon} ${faceVerificationClass}"></i>
+                                <span class="${faceVerificationClass}">${faceVerificationText}</span>
+                                <span class="text-gray-400">|</span>
+                                <i class="fas ${hasApprovedVisitsIcon} ${hasApprovedVisitsClass}"></i>
+                                <span class="${hasApprovedVisitsClass}">${hasApprovedVisitsText}</span>
+                            </div>
+                        `;
+                        
+                        // Add approved visits if any
+                        if (verifiedVisitor.has_approved_visits && verifiedVisitor.approved_visits.length > 0) {
+                            let visitsHtml = `
+                                <div class="mt-3">
+                                    <h5 class="text-sm font-medium">Approved Visits:</h5>
+                                    <ul class="mt-1 space-y-1">
+                            `;
+                            
+                            verifiedVisitor.approved_visits.forEach(visit => {
+                                visitsHtml += `
+                                    <li class="text-xs bg-green-50 p-2 rounded">
+                                        <div class="flex justify-between">
+                                            <span>${visit.department}</span>
+                                            <span>${visit.date}</span>
+                                        </div>
+                                        <div class="text-gray-500">Purpose: ${visit.purpose}</div>
+                                    </li>
+                                `;
+                            });
+                            
+                            visitsHtml += `
+                                    </ul>
+                                </div>
+                            `;
+                            
+                            visitorDetails.innerHTML += visitsHtml;
+                        }
+                    } else {
+                        // Show error message
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while verifying visitor');
+                });
+            });
+        }
+        
+        // Record entry button
+        if (recordEntryBtn) {
+            recordEntryBtn.addEventListener('click', function() {
+                if (!verifiedVisitor) {
+                    alert('No verified visitor');
+                    return;
+                }
+                
+                // Get department from approved visits or prompt user
+                let department = '';
+                if (verifiedVisitor.has_approved_visits && verifiedVisitor.approved_visits.length > 0) {
+                    department = verifiedVisitor.approved_visits[0].department;
+                } else {
+                    department = prompt('Enter department for visit:');
+                    if (!department) return;
+                }
+                
+                // Call API to record entry
+                fetch('/api/record_entry', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        visitor_id: verifiedVisitor.user_id,
+                        aadhaar: verifiedVisitor.aadhaar,
+                        department: department,
+                        photoData: photoData,
+                        faceMatchScore: verifiedVisitor.face_match_score
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Entry recorded successfully. Pass ID: ${data.pass_id}`);
+                        // Reload page to refresh entry logs
+                        window.location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while recording entry');
+                });
+            });
+        }
+        
+        // Deny entry button
+        if (denyEntryBtn) {
+            denyEntryBtn.addEventListener('click', function() {
+                alert('Entry denied. Visitor has been notified.');
+                // Reset verification
+                verificationResults.classList.add('hidden');
+                verifiedVisitor = null;
+                document.getElementById('aadhaar').value = '';
+                
+                // Reset camera
+                if (retakePhotoBtn) {
+                    retakePhotoBtn.click();
+                }
+            });
+        }
+        
+        // Record exit modal
+        const recordExitBtnMain = document.getElementById('record-exit-btn');
+        const exitModal = document.getElementById('exit-modal');
+        const closeExitModal = document.getElementById('close-exit-modal');
+        const cancelExit = document.getElementById('cancel-exit');
+        const exitForm = document.getElementById('exit-form');
+        
+        if (recordExitBtnMain && exitModal) {
+            recordExitBtnMain.addEventListener('click', function() {
+                exitModal.classList.remove('hidden');
+            });
+        }
+        
+        if (closeExitModal && exitModal) {
+            closeExitModal.addEventListener('click', function() {
+                exitModal.classList.add('hidden');
+            });
+        }
+        
+        if (cancelExit && exitModal) {
+            cancelExit.addEventListener('click', function() {
+                exitModal.classList.add('hidden');
+            });
+        }
+        
+        // Record exit from table
+        const recordExitBtns = document.querySelectorAll('.record-exit-btn');
+        recordExitBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const passId = this.getAttribute('data-pass-id');
+                document.getElementById('exit-pass-id').value = passId;
+                exitModal.classList.remove('hidden');
+            });
+        });
+        
+        // Exit form submission
+        if (exitForm) {
+            exitForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const passId = document.getElementById('exit-pass-id').value.trim();
+                
+                if (!passId) {
+                    alert('Please enter Pass ID');
+                    return;
+                }
+                
+                // Call API to record exit
+                fetch('/api/record_exit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ pass_id: passId }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Exit recorded successfully');
+                        exitModal.classList.add('hidden');
+                        // Reload page to refresh entry logs
+                        window.location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while recording exit');
+                });
+            });
         }
     });
-    
-    // Search form
-    document.getElementById('search-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        alert('Search functionality would be implemented here');
-    });
-    
-    // Initialize scan mode
-    updateScanMode();
-});
 </script>
 {% endblock %}
