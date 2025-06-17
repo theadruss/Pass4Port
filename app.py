@@ -21,6 +21,7 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+import csv
 
 # Import DeepFace for face recognition
 try:
@@ -316,7 +317,8 @@ def init_db():
             ('visitor', 'password', 'visitor', 'Rahul Sharma', 'VIS-2024-001234', '+91 9876543210', 'rahul@example.com', '123456789012', 'placeholder.jpg', '2024-01-01', 'active', None, None, None),
             ('officer', 'password', 'officer', 'Dr. Rajesh Kumar', 'OFF-2024-001', '+91 9876543211', 'rajesh@example.com', None, 'placeholder.jpg', '2024-01-01', 'active', None, None, None),
             ('security', 'password', 'security', 'Suresh Gupta', 'SEC-001', '+91 9876543212', 'suresh@example.com', None, 'placeholder.jpg', '2024-01-01', 'active', None, None, None),
-            ('admin', 'password', 'admin', 'System Administrator', 'ADMIN-001', '+91 9876543213', 'admin@example.com', None, 'placeholder.jpg', '2024-01-01', 'active', None, None, None)
+            ('admin', 'password', 'admin', 'System Administrator', 'ADMIN-001', '+91 9876543213', 'admin@example.com', None, 'placeholder.jpg', '2024-01-01', 'active', None, None, None),
+            # Add some worker users for testing
         ]
         cursor.executemany('''
         INSERT INTO users (username, password, role, name, user_id, phone, email, aadhaar, photo_file, registration_date, status, agency_code, agency_employee_id, agency_designation)
@@ -328,7 +330,7 @@ def init_db():
     if cursor.fetchone()[0] == 0:
         default_agencies = [
             ('AGY001', 'TechCorp Solutions', 'IT Services', 'John Smith', 'john@techcorp.com', '+91 9876543215', '123 Tech Park, Bangalore', 'Leading IT solutions provider', json.dumps(['Building A', 'Building B', 'Conference Hall']), '2024-01-01', '2025-12-31', 'approved', 'ADMIN-001', 'ADMIN-001', '2024-01-01', 'www.techcorp.com', 'LIC123456', 'password'),
-            ('AGY002', 'Global Consulting', 'Consulting', 'Sarah Johnson', 'sarah@globalconsult.com', '+91 9876543216', '456 Business District, Mumbai', 'Management consulting services', json.dumps(['Meeting Rooms', 'Executive Floor']), '2024-01-01', '2025-06-30', 'pending', 'ADMIN-001', None, None, 'www.globalconsult.com', 'LIC789012', 'password')
+            ('AGY002', 'Global Consulting', 'Consulting', 'Sarah Johnson', 'sarah@globalconsult.com', '+91 9876543216', '456 Business District, Mumbai', 'Management consulting services', json.dumps(['Meeting Rooms', 'Executive Floor']), '2024-01-01', '2025-06-30', 'approved', 'ADMIN-001', 'ADMIN-001', '2024-01-01', 'www.globalconsult.com', 'LIC789012', 'password')
         ]
         cursor.executemany('''
         INSERT INTO agencies (agency_code, agency_name, agency_type, contact_person, contact_email, contact_phone, address, description, locations_access, registration_date, expiry_date, status, created_by, approved_by, approved_date, website, license_number, password)
@@ -727,6 +729,34 @@ def index():
 @app.route('/login')
 def login():
     return render_template('login.html')
+
+@app.route('/api/verify_face', methods=['POST'])
+def api_verify_face():
+    data = request.get_json()
+    visitor_id = data.get('visitor_id')
+    photo_data = data.get('photo_data')
+
+    if not visitor_id or not photo_data:
+        return jsonify({'success': False, 'message': 'Missing data'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT photo_file FROM users WHERE user_id = ?", (visitor_id,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if not user or not user['photo_file']:
+        return jsonify({'success': False, 'message': 'No photo on file'}), 404
+
+    known_image_path = os.path.join(app.config['UPLOAD_FOLDER'], user['photo_file'])
+
+    match_score = compare_faces(known_image_path, photo_data)
+
+    if match_score >= 0.75:
+        return jsonify({'success': True, 'match_score': match_score})
+    else:
+        return jsonify({'success': False, 'match_score': match_score, 'message': 'Face does not match'})
+
 
 @app.route('/login', methods=['POST'])
 def handle_login():
@@ -1194,6 +1224,80 @@ def dashboard_security():
     cursor.execute("SELECT * FROM entry_logs ORDER BY entry_time DESC LIMIT 50")
     entry_logs = cursor.fetchall()
     
+    # Get active passes for verification - improved query with better date handling
+    today = datetime.now().strftime('%Y-%m-%d')
+
+    # First, get all visitor passes (approved visit requests for today)
+    cursor.execute("""
+    SELECT 
+        vr.request_id as pass_id,
+        vr.visitor_id as worker_id,
+        vr.visitor_name as worker_name,
+        'visitor' as pass_type,
+        vr.department as access_areas,
+        NULL as agency_code,
+        vr.date as valid_from,
+        vr.date as valid_until,
+        u.photo_file,
+        NULL as agency_name
+    FROM visit_requests vr
+    JOIN users u ON vr.visitor_id = u.user_id
+    WHERE vr.status = 'approved' 
+    AND vr.date = ?
+    UNION ALL
+    SELECT 
+        wp.pass_id, 
+        wp.worker_id, 
+        wp.worker_name, 
+        wp.pass_type, 
+        wp.access_areas,
+        wp.agency_code,
+        wp.valid_from,
+        wp.valid_until,
+        u.photo_file,
+        a.agency_name
+    FROM worker_passes wp
+    JOIN users u ON wp.worker_id = u.user_id
+    LEFT JOIN agencies a ON wp.agency_code = a.agency_code
+    WHERE wp.status = 'active' 
+    AND wp.valid_from <= ? 
+    AND wp.valid_until >= ?
+    ORDER BY worker_name
+    """, (today, today, today))
+
+    active_passes_raw = cursor.fetchall()
+
+    # Convert to list of dictionaries and parse access_areas
+    active_passes = []
+    for pass_row in active_passes_raw:
+        pass_dict = dict(pass_row)
+        try:
+            # Handle access_areas - for visitors it's department, for workers it's JSON
+            if pass_dict['pass_type'] == 'visitor':
+                # For visitors, access_areas contains the department name
+                pass_dict['access_areas'] = [pass_dict['access_areas']] if pass_dict['access_areas'] else []
+            else:
+                # For workers, parse JSON access_areas
+                if pass_dict['access_areas']:
+                    pass_dict['access_areas'] = json.loads(pass_dict['access_areas'])
+                else:
+                    pass_dict['access_areas'] = []
+        except (json.JSONDecodeError, TypeError):
+            pass_dict['access_areas'] = []
+    
+        # Add pass type indicator for display
+        if pass_dict['pass_type'] == 'visitor':
+            pass_dict['pass_type_display'] = 'Visitor Pass'
+        else:
+            pass_dict['pass_type_display'] = f"{pass_dict['pass_type'].title()} Worker Pass"
+    
+        active_passes.append(pass_dict)
+
+    # Debug logging
+    logger.debug(f"Found {len(active_passes)} active passes for date {today}")
+    for pass_item in active_passes:
+        logger.debug(f"Pass: {pass_item['pass_id']} - {pass_item['worker_name']} - Type: {pass_item['pass_type']} - Valid: {pass_item['valid_from']} to {pass_item['valid_until']}")
+    
     # Get user notifications
     notifications = get_user_notifications(session['user_id'])
     unread_count = get_unread_notification_count(session['user_id'])
@@ -1202,7 +1306,13 @@ def dashboard_security():
     settings = get_user_settings(session['user_id'])
     
     # Get active notices
-    cursor.execute("SELECT * FROM notices WHERE is_active = 1 AND (target_audience = 'all' OR target_audience = 'security') AND (expires_at IS NULL OR expires_at > ?) ORDER BY priority DESC, created_at DESC", (datetime.now().strftime('%Y-%m-%d %H:%M:%S'),))
+    cursor.execute("""
+    SELECT * FROM notices 
+    WHERE is_active = 1 
+    AND (target_audience = 'all' OR target_audience = 'security') 
+    AND (expires_at IS NULL OR expires_at > ?) 
+    ORDER BY priority DESC, created_at DESC
+    """, (datetime.now().strftime('%Y-%m-%d %H:%M:%S'),))
     notices = cursor.fetchall()
     
     conn.close()
@@ -1219,6 +1329,7 @@ def dashboard_security():
     
     return render_template('dashboard_security.html', 
                          entry_logs=entry_logs_with_masked,
+                         active_passes=active_passes,
                          notifications=notifications,
                          unread_count=unread_count,
                          settings=settings,
@@ -1256,6 +1367,20 @@ def dashboard_admin():
     cursor.execute("SELECT * FROM agencies WHERE status = 'pending'")
     pending_agency_registrations = cursor.fetchall()
     
+    # Get approved agencies
+    cursor.execute("SELECT * FROM agencies WHERE status = 'approved'")
+    approved_agencies = cursor.fetchall()
+    
+    # Get users by role for admin tabs
+    cursor.execute("SELECT * FROM users WHERE role = 'visitor' AND status = 'active'")
+    visitors = cursor.fetchall()
+    
+    cursor.execute("SELECT * FROM users WHERE role = 'officer' AND status = 'active'")
+    officers = cursor.fetchall()
+    
+    cursor.execute("SELECT * FROM users WHERE role = 'security' AND status = 'active'")
+    security_personnel = cursor.fetchall()
+    
     # Parse locations_access for agencies
     agencies_with_parsed_locations = []
     for agency in pending_agency_registrations:
@@ -1281,6 +1406,9 @@ def dashboard_admin():
     cursor.execute("SELECT * FROM notices WHERE is_active = 1 ORDER BY priority DESC, created_at DESC")
     notices = cursor.fetchall()
     
+    # Get system alerts (placeholder)
+    system_alerts = []
+    
     conn.close()
     
     stats = {
@@ -1296,10 +1424,15 @@ def dashboard_admin():
                          flagged_aadhaar=flagged_aadhaar,
                          pending_registrations=pending_registrations,
                          pending_agency_registrations=agencies_with_parsed_locations,
+                         approved_agencies=approved_agencies,
+                         visitors=visitors,
+                         officers=officers,
+                         security_personnel=security_personnel,
                          notifications=notifications,
                          unread_count=unread_count,
                          settings=settings,
-                         notices=notices)
+                         notices=notices,
+                         system_alerts=system_alerts)
 
 @app.route('/dashboard/agency')
 def dashboard_agency():
@@ -1386,6 +1519,546 @@ def dashboard_agency():
                          unread_count=unread_count,
                          settings=settings,
                          recent_activities=recent_activities)
+
+@app.route('/profile')
+def profile():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Get user data
+    cursor.execute("SELECT * FROM users WHERE user_id = ?", (session['user_id'],))
+    user = cursor.fetchone()
+    
+    if not user:
+        flash('User not found', 'error')
+        return redirect(url_for('login'))
+    
+    # Get user settings
+    settings = get_user_settings(session['user_id'])
+    
+    # Get user notifications
+    notifications = get_user_notifications(session['user_id'])
+    unread_count = get_unread_notification_count(session['user_id'])
+    
+    conn.close()
+    
+    # Mask Aadhaar for display
+    user_dict = dict(user)
+    if user_dict.get('aadhaar'):
+        user_dict['masked_aadhaar'] = mask_aadhaar(user_dict['aadhaar'])
+    else:
+        user_dict['masked_aadhaar'] = "Not provided"
+    
+    return render_template('profile.html', 
+                         user=user_dict,
+                         settings=settings,
+                         notifications=notifications,
+                         unread_count=unread_count)
+
+@app.route('/settings')
+def settings():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    # Get user settings
+    settings = get_user_settings(session['user_id'])
+    
+    # Get user notifications
+    notifications = get_user_notifications(session['user_id'])
+    unread_count = get_unread_notification_count(session['user_id'])
+    
+    return render_template('settings.html', 
+                         settings=settings,
+                         notifications=notifications,
+                         unread_count=unread_count)
+
+@app.route('/help')
+def help():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    # Get user notifications
+    notifications = get_user_notifications(session['user_id'])
+    unread_count = get_unread_notification_count(session['user_id'])
+    
+    return render_template('help.html',
+                         notifications=notifications,
+                         unread_count=unread_count)
+
+@app.route('/agencies')
+def agencies():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Get approved agencies
+    cursor.execute("SELECT * FROM agencies WHERE status = 'approved' ORDER BY agency_name")
+    agencies = cursor.fetchall()
+    
+    # Get user notifications
+    notifications = get_user_notifications(session['user_id'])
+    unread_count = get_unread_notification_count(session['user_id'])
+    
+    conn.close()
+    
+    return render_template('agencies.html',
+                         agencies=agencies,
+                         notifications=notifications,
+                         unread_count=unread_count)
+
+# API routes for profile and settings
+@app.route('/api/update_profile', methods=['POST'])
+def update_profile():
+    if 'user' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.json
+            photo_data = data.get('photoData')
+        else:
+            data = request.form.to_dict()
+            photo_data = request.form.get('photoData')
+        
+        # Get current user data
+        user = execute_db_query(
+            "SELECT * FROM users WHERE user_id = ?",
+            (session['user_id'],),
+            fetch_one=True
+        )
+        
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+        
+        # Update allowed fields
+        update_fields = []
+        update_values = []
+        
+        if 'name' in data and data['name'].strip():
+            update_fields.append('name = ?')
+            update_values.append(data['name'].strip())
+        
+        if 'phone' in data and data['phone'].strip():
+            update_fields.append('phone = ?')
+            update_values.append(data['phone'].strip())
+        
+        if 'email' in data and data['email'].strip():
+            update_fields.append('email = ?')
+            update_values.append(data['email'].strip())
+        
+        # Handle photo upload
+        if photo_data:
+            photo_file = handle_photo_upload(photo_data)
+            if photo_file:
+                update_fields.append('photo_file = ?')
+                update_values.append(photo_file)
+        
+        # Handle password change
+        if 'current_password' in data and 'new_password' in data:
+            current_password = data['current_password']
+            new_password = data['new_password']
+            
+            if current_password and new_password:
+                # Verify current password (in production, use check_password)
+                if user['password'] == current_password:
+                    update_fields.append('password = ?')
+                    update_values.append(new_password)  # In production, use hash_password
+                else:
+                    return jsonify({'success': False, 'message': 'Current password is incorrect'}), 400
+        
+        if update_fields:
+            update_values.append(session['user_id'])
+            query = f"UPDATE users SET {', '.join(update_fields)} WHERE user_id = ?"
+            execute_db_query(query, tuple(update_values))
+            
+            # Log system action
+            log_system_action(session['user_id'], 'UPDATE_PROFILE', 'Profile updated')
+            
+            # Add notification
+            add_notification(
+                session['user_id'],
+                'Profile Updated',
+                'Your profile information has been updated successfully.',
+                'success',
+                None,
+                'user-edit'
+            )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile updated successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating profile: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to update profile'
+        }), 500
+
+@app.route('/api/update_settings', methods=['POST'])
+def update_settings():
+    if 'user' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        data = request.json
+        
+        # Convert dashboard_widgets list to JSON string
+        dashboard_widgets = data.get('dashboard_widgets', [])
+        if isinstance(dashboard_widgets, list):
+            dashboard_widgets_json = json.dumps(dashboard_widgets)
+        else:
+            dashboard_widgets_json = json.dumps([])
+        
+        # Update user settings
+        execute_db_query('''
+        INSERT OR REPLACE INTO user_settings 
+        (user_id, email_notifications, sms_notifications, theme, language, dashboard_widgets, notification_sound, auto_logout, profile_visibility)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            session['user_id'],
+            data.get('email_notifications', 1),
+            data.get('sms_notifications', 0),
+            data.get('theme', 'light'),
+            data.get('language', 'en'),
+            dashboard_widgets_json,
+            data.get('notification_sound', 1),
+            data.get('auto_logout', 30),
+            data.get('profile_visibility', 'private')
+        ))
+        
+        # Log system action
+        log_system_action(session['user_id'], 'UPDATE_SETTINGS', 'Settings updated')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Settings updated successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating settings: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to update settings'
+        }), 500
+
+# API routes for admin functions
+@app.route('/api/send_notification', methods=['POST'])
+def send_notification():
+    if 'user' not in session or session['role'] != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        data = request.json
+        title = data.get('title')
+        message = data.get('message')
+        target_audience = data.get('target_audience', 'all')
+        notification_type = data.get('type', 'info')
+        priority = data.get('priority', 'normal')
+        
+        if not title or not message:
+            return jsonify({'success': False, 'message': 'Title and message are required'}), 400
+        
+        # Send notification based on target audience
+        if target_audience == 'all':
+            # Send to all active users
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT user_id FROM users WHERE status = 'active'")
+            users = cursor.fetchall()
+            conn.close()
+            
+            for user in users:
+                add_notification(user['user_id'], title, message, notification_type, None, 'bullhorn', priority)
+        else:
+            # Send to specific role
+            send_notification_to_role(target_audience, title, message, notification_type, None, 'bullhorn', priority)
+        
+        # Log system action
+        log_system_action(session['user_id'], 'SEND_NOTIFICATION', f'Sent notification to {target_audience}: {title}')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notification sent successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error sending notification: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to send notification'
+        }), 500
+
+@app.route('/api/get_user_details')
+def get_user_details():
+    if 'user' not in session or session['role'] != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    username = request.args.get('username')
+    if not username:
+        return jsonify({'success': False, 'message': 'Username is required'}), 400
+    
+    try:
+        user = execute_db_query(
+            "SELECT * FROM users WHERE username = ?",
+            (username,),
+            fetch_one=True
+        )
+        
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+        
+        user_dict = dict(user)
+        if user_dict.get('aadhaar'):
+            user_dict['masked_aadhaar'] = mask_aadhaar(user_dict['aadhaar'])
+        
+        # Generate HTML content for modal
+        html_content = f"""
+        <div class="space-y-4">
+            <div class="flex items-center space-x-4">
+                <img src="/static/uploads/{user_dict['photo_file']}" alt="Profile" class="w-16 h-16 rounded-full object-cover">
+                <div>
+                    <h4 class="font-medium text-gray-900">{user_dict['name']}</h4>
+                    <p class="text-sm text-gray-500">{user_dict['user_id']}</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div><strong>Email:</strong> {user_dict['email']}</div>
+                <div><strong>Phone:</strong> {user_dict['phone']}</div>
+                <div><strong>Role:</strong> {user_dict['role'].title()}</div>
+                <div><strong>Status:</strong> {user_dict['status'].title()}</div>
+                <div><strong>Registered:</strong> {user_dict['registration_date']}</div>
+                <div><strong>Last Login:</strong> {user_dict['last_login'] or 'Never'}</div>
+            </div>
+            {f'<div class="text-sm"><strong>Aadhaar:</strong> {user_dict["masked_aadhaar"]}</div>' if user_dict.get('aadhaar') else ''}
+        </div>
+        """
+        
+        return jsonify({
+            'success': True,
+            'html': html_content
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting user details: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to get user details'
+        }), 500
+
+@app.route('/api/get_agency_details')
+def get_agency_details():
+    if 'user' not in session or session['role'] != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    agency_code = request.args.get('agency_code')
+    if not agency_code:
+        return jsonify({'success': False, 'message': 'Agency code is required'}), 400
+    
+    try:
+        agency = execute_db_query(
+            "SELECT * FROM agencies WHERE agency_code = ?",
+            (agency_code,),
+            fetch_one=True
+        )
+        
+        if not agency:
+            return jsonify({'success': False, 'message': 'Agency not found'}), 404
+        
+        agency_dict = dict(agency)
+        try:
+            locations_access = json.loads(agency_dict['locations_access']) if agency_dict['locations_access'] else []
+        except:
+            locations_access = []
+        
+        # Generate HTML content for modal
+        html_content = f"""
+        <div class="space-y-4">
+            <div>
+                <h4 class="font-medium text-gray-900">{agency_dict['agency_name']}</h4>
+                <p class="text-sm text-gray-500">{agency_dict['agency_code']} - {agency_dict['agency_type']}</p>
+            </div>
+            <div class="grid grid-cols-1 gap-4 text-sm">
+                <div><strong>Contact Person:</strong> {agency_dict['contact_person']}</div>
+                <div><strong>Email:</strong> {agency_dict['contact_email']}</div>
+                <div><strong>Phone:</strong> {agency_dict['contact_phone']}</div>
+                <div><strong>Address:</strong> {agency_dict['address']}</div>
+                <div><strong>Website:</strong> {agency_dict['website'] or 'Not provided'}</div>
+                <div><strong>License:</strong> {agency_dict['license_number'] or 'Not provided'}</div>
+                <div><strong>Registered:</strong> {agency_dict['registration_date']}</div>
+                <div><strong>Expires:</strong> {agency_dict['expiry_date']}</div>
+                <div><strong>Status:</strong> {agency_dict['status'].title()}</div>
+            </div>
+            <div class="text-sm">
+                <strong>Description:</strong>
+                <p class="mt-1 text-gray-600">{agency_dict['description'] or 'No description provided'}</p>
+            </div>
+            <div class="text-sm">
+                <strong>Access Locations:</strong>
+                <ul class="mt-1 list-disc list-inside text-gray-600">
+                    {''.join([f'<li>{location}</li>' for location in locations_access]) if locations_access else '<li>No locations specified</li>'}
+                </ul>
+            </div>
+        </div>
+        """
+        
+        return jsonify({
+            'success': True,
+            'html': html_content
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting agency details: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to get agency details'
+        }), 500
+
+@app.route('/api/activate_user', methods=['POST'])
+def activate_user():
+    if 'user' not in session or session['role'] != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        data = request.json
+        username = data.get('username')
+        
+        if not username:
+            return jsonify({'success': False, 'message': 'Username is required'}), 400
+        
+        execute_db_query(
+            "UPDATE users SET status = 'active' WHERE username = ?",
+            (username,)
+        )
+        
+        # Get user details for notification
+        user = execute_db_query(
+            "SELECT * FROM users WHERE username = ?",
+            (username,),
+            fetch_one=True
+        )
+        
+        if user:
+            add_notification(
+                user['user_id'],
+                'Account Activated',
+                'Your account has been activated by the administrator.',
+                'success',
+                None,
+                'user-check'
+            )
+        
+        log_system_action(session['user_id'], 'ACTIVATE_USER', f'Activated user: {username}')
+        
+        return jsonify({
+            'success': True,
+            'message': 'User activated successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error activating user: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to activate user'
+        }), 500
+
+@app.route('/api/deactivate_user', methods=['POST'])
+def deactivate_user():
+    if 'user' not in session or session['role'] != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        data = request.json
+        username = data.get('username')
+        
+        if not username:
+            return jsonify({'success': False, 'message': 'Username is required'}), 400
+        
+        execute_db_query(
+            "UPDATE users SET status = 'inactive' WHERE username = ?",
+            (username,)
+        )
+        
+        # Get user details for notification
+        user = execute_db_query(
+            "SELECT * FROM users WHERE username = ?",
+            (username,),
+            fetch_one=True
+        )
+        
+        if user:
+            add_notification(
+                user['user_id'],
+                'Account Deactivated',
+                'Your account has been deactivated by the administrator.',
+                'warning',
+                None,
+                'user-slash'
+            )
+        
+        log_system_action(session['user_id'], 'DEACTIVATE_USER', f'Deactivated user: {username}')
+        
+        return jsonify({
+            'success': True,
+            'message': 'User deactivated successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error deactivating user: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to deactivate user'
+        }), 500
+
+@app.route('/api/export_visitors')
+def export_visitors():
+    if 'user' not in session or session['role'] != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    try:
+        # Get all visitors
+        visitors = execute_db_query(
+            "SELECT * FROM users WHERE role = 'visitor'",
+            fetch_all=True
+        )
+        
+        # Create CSV content
+        output = BytesIO()
+        output.write('\ufeff'.encode('utf8'))  # BOM for Excel
+        
+        fieldnames = ['name', 'user_id', 'email', 'phone', 'registration_date', 'status', 'last_login']
+        writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction='ignore')
+        
+        writer.writeheader()
+        for visitor in visitors:
+            visitor_dict = dict(visitor)
+            # Remove sensitive data
+            visitor_dict.pop('aadhaar', None)
+            visitor_dict.pop('password', None)
+            writer.writerow(visitor_dict)
+        
+        output.seek(0)
+        
+        return send_file(
+            BytesIO(output.getvalue()),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'visitors_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        )
+        
+    except Exception as e:
+        logger.error(f"Error exporting visitors: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Failed to export visitors'
+        }), 500
 
 @app.route('/logout')
 def logout():
@@ -1613,54 +2286,61 @@ def reject_request():
 def verify_visitor():
     if 'user' not in session or session['role'] != 'security':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
+
     try:
         data = request.json
         aadhaar = data.get('aadhaar')
-        photo_data = data.get('photoData')
+        pass_id = data.get('pass_id')  # Can also search by pass ID
         
-        if not aadhaar:
-            return jsonify({'success': False, 'message': 'Aadhaar number is required'}), 400
+        visitor = None
         
-        if not validate_aadhaar(aadhaar):
-            return jsonify({'success': False, 'message': 'Invalid Aadhaar number format'}), 400
+        # Search by pass ID first (for worker passes)
+        if pass_id:
+            # Check worker passes
+            worker_pass = execute_db_query(
+                "SELECT wp.*, u.* FROM worker_passes wp JOIN users u ON wp.worker_id = u.user_id WHERE wp.pass_id = ? AND wp.status = 'active'",
+                (pass_id,),
+                fetch_one=True
+            )
+            if worker_pass:
+                visitor = worker_pass
         
-        # Check if Aadhaar is blacklisted
-        if is_aadhaar_blacklisted(aadhaar):
-            reason = get_blacklist_reason(aadhaar)
-            return jsonify({
-                'success': False,
-                'message': f'Access denied. This Aadhaar number is blacklisted. Reason: {reason}'
-            }), 403
-        
-        # Find visitor by Aadhaar
-        visitor = execute_db_query(
-            "SELECT * FROM users WHERE aadhaar = ? AND role = 'visitor' AND status = 'active'",
-            (aadhaar,),
-            fetch_one=True
-        )
+        # Search by Aadhaar (for regular visitors)
+        elif aadhaar:
+            if not validate_aadhaar(aadhaar):
+                return jsonify({'success': False, 'message': 'Invalid Aadhaar number format'}), 400
+            
+            # Check if Aadhaar is blacklisted
+            if is_aadhaar_blacklisted(aadhaar):
+                reason = get_blacklist_reason(aadhaar)
+                return jsonify({
+                    'success': False,
+                    'message': f'Access denied. This Aadhaar number is blacklisted. Reason: {reason}'
+                }), 403
+            
+            # Find visitor by Aadhaar
+            visitor = execute_db_query(
+                "SELECT * FROM users WHERE aadhaar = ? AND role = 'visitor' AND status = 'active'",
+                (aadhaar,),
+                fetch_one=True
+            )
+        else:
+            return jsonify({'success': False, 'message': 'Aadhaar number or Pass ID is required'}), 400
         
         if not visitor:
             return jsonify({
                 'success': False,
-                'message': 'Visitor not found or account not active'
+                'message': 'Visitor/Worker not found or account not active'
             }), 404
         
-        # Check for approved visits
-        approved_visits = execute_db_query(
-            "SELECT * FROM visit_requests WHERE visitor_id = ? AND status = 'approved' AND date >= ?",
-            (visitor['user_id'], datetime.now().strftime('%Y-%m-%d')),
-            fetch_all=True
-        )
-        
-        # Face verification if photo provided
-        face_verified = False
-        face_match_score = 0.0
-        
-        if photo_data and visitor['photo_file'] and visitor['photo_file'] != 'placeholder.jpg':
-            known_image_path = os.path.join(app.config['UPLOAD_FOLDER'], visitor['photo_file'])
-            face_match_score = compare_faces(known_image_path, photo_data)
-            face_verified = face_match_score > 0.7  # Threshold for face verification
+        # Check for approved visits (for regular visitors)
+        approved_visits = []
+        if not pass_id:  # Only check for regular visitors
+            approved_visits = execute_db_query(
+                "SELECT * FROM visit_requests WHERE visitor_id = ? AND status = 'approved' AND date >= ?",
+                (visitor['user_id'], datetime.now().strftime('%Y-%m-%d')),
+                fetch_all=True
+            )
         
         # Prepare response
         visitor_data = {
@@ -1668,12 +2348,12 @@ def verify_visitor():
             'user_id': visitor['user_id'],
             'email': visitor['email'],
             'phone': visitor['phone'],
-            'masked_aadhaar': mask_aadhaar(visitor['aadhaar']),
+            'masked_aadhaar': mask_aadhaar(visitor.get('aadhaar', '')),
             'photo_url': f"/static/uploads/{visitor['photo_file']}" if visitor['photo_file'] and visitor['photo_file'] != 'placeholder.jpg' else None,
-            'face_verified': face_verified,
-            'face_match_score': face_match_score,
-            'has_approved_visits': len(approved_visits) > 0,
-            'approved_visits': [dict(visit) for visit in approved_visits]
+            'has_approved_visits': len(approved_visits) > 0 or bool(pass_id),
+            'approved_visits': [dict(visit) for visit in approved_visits],
+            'pass_id': pass_id,
+            'is_worker': bool(pass_id)
         }
         
         return jsonify({
@@ -1695,54 +2375,60 @@ def record_entry():
     
     try:
         data = request.json
+        pass_id = data.get('pass_id')
         visitor_id = data.get('visitor_id')
-        aadhaar = data.get('aadhaar')
+        visitor_name = data.get('visitor_name')
         department = data.get('department')
-        photo_data = data.get('photoData')
-        face_match_score = data.get('faceMatchScore', 0.0)
+        photo_data = data.get('photo_data')
+        face_match_score = data.get('face_match_score', 0.0)
+        agency_code = data.get('agency_code')
+        pass_type = data.get('pass_type', 'visitor')
         
-        if not all([visitor_id, department]):
+        if not all([visitor_id, visitor_name, department]):
             return jsonify({'success': False, 'message': 'Missing required fields'}), 400
         
-        # Get visitor details
-        visitor = execute_db_query(
-            "SELECT * FROM users WHERE user_id = ?",
-            (visitor_id,),
-            fetch_one=True
-        )
-        
-        if not visitor:
-            return jsonify({'success': False, 'message': 'Visitor not found'}), 404
-        
-        # Generate pass ID
-        pass_id = f"ENTRY-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
+        # Generate pass ID if not provided
+        if not pass_id:
+            pass_id = f"ENTRY-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
         
         # Save entry photo if provided
         entry_photo = None
         if photo_data:
             entry_photo = handle_photo_upload(photo_data)
         
+        # Get visitor's Aadhaar for last 4 digits
+        visitor = execute_db_query(
+            "SELECT aadhaar FROM users WHERE user_id = ?",
+            (visitor_id,),
+            fetch_one=True
+        )
+        
+        aadhaar_last4 = None
+        if visitor and visitor['aadhaar']:
+            aadhaar_last4 = get_aadhaar_last4(visitor['aadhaar'])
+        
         # Record entry
         execute_db_query('''
-        INSERT INTO entry_logs (pass_id, visitor_name, visitor_id, department, aadhaar_last4, entry_time, status, entry_photo, face_match_score, pass_type, security_officer, entry_date)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO entry_logs (pass_id, visitor_name, visitor_id, department, aadhaar_last4, entry_time, status, entry_photo, face_match_score, agency_code, pass_type, security_officer, entry_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             pass_id,
-            visitor['name'],
+            visitor_name,
             visitor_id,
             department,
-            get_aadhaar_last4(aadhaar) if aadhaar else None,
+            aadhaar_last4,
             datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'inside',
             entry_photo,
             face_match_score,
-            'visitor',
+            agency_code,
+            pass_type,
             session['name'],
             datetime.now().strftime('%Y-%m-%d')
         ))
         
         # Log system action
-        log_system_action(session['user_id'], 'RECORD_ENTRY', f'Recorded entry for {visitor["name"]} ({visitor_id})')
+        log_system_action(session['user_id'], 'RECORD_ENTRY', f'Recorded entry for {visitor_name} ({visitor_id})')
         
         # Add notification to visitor
         add_notification(
@@ -1824,532 +2510,49 @@ def record_exit():
             'message': 'Failed to record exit'
         }), 500
 
-# API routes for agency join requests
-@app.route('/api/approve_join_request', methods=['POST'])
-def approve_join_request():
-    if 'user' not in session or session['role'] != 'agency':
+@app.route('/api/verify_face', methods=['POST'])
+def verify_face():
+    if 'user' not in session or session['role'] != 'security':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
-    data = request.json
-    user_id = data.get('user_id')
-    
-    if not user_id:
-        return jsonify({'success': False, 'message': 'User ID is required'}), 400
-    
-    agency_code = session.get('agency_code')
-    if not agency_code:
-        return jsonify({'success': False, 'message': 'No agency associated with account'}), 400
-    
     try:
-        # Update user's join request status
-        execute_db_query(
-            "UPDATE users SET join_request_status = 'approved' WHERE user_id = ? AND agency_code = ?",
-            (user_id, agency_code)
-        )
+        data = request.json
+        visitor_id = data.get('visitor_id')
+        photo_data = data.get('photo_data')
         
-        # Add to agency employees table
-        execute_db_query('''
-        INSERT INTO agency_employees (agency_code, user_id, employee_id, designation, access_level, status, added_date, added_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            agency_code,
-            user_id,
-            user_id,  # Use user_id as employee_id for now
-            'Worker',
-            'basic',
-            'active',
-            datetime.now().strftime('%Y-%m-%d'),
-            session['user_id']
-        ))
+        if not visitor_id:
+            return jsonify({'success': False, 'message': 'Visitor ID is required'}), 400
         
-        # Log system action
-        log_system_action(session['user_id'], 'APPROVE_JOIN_REQUEST', f'Approved join request for {user_id}')
-        
-        # Add notification to user
-        add_notification(
-            user_id,
-            'Join Request Approved',
-            f'Your request to join the agency has been approved.',
-            'success',
-            None,
-            'user-check'
-        )
-        
-        return jsonify({
-            'success': True,
-            'message': 'Join request approved successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error approving join request: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to approve join request'
-        }), 500
-
-@app.route('/api/reject_join_request', methods=['POST'])
-def reject_join_request():
-    if 'user' not in session or session['role'] != 'agency':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    data = request.json
-    user_id = data.get('user_id')
-    reason = data.get('reason', 'No reason provided')
-    
-    if not user_id:
-        return jsonify({'success': False, 'message': 'User ID is required'}), 400
-    
-    agency_code = session.get('agency_code')
-    if not agency_code:
-        return jsonify({'success': False, 'message': 'No agency associated with account'}), 400
-    
-    try:
-        # Update user's join request status
-        execute_db_query(
-            "UPDATE users SET join_request_status = 'rejected', agency_code = NULL WHERE user_id = ? AND agency_code = ?",
-            (user_id, agency_code)
-        )
-        
-        # Log system action
-        log_system_action(session['user_id'], 'REJECT_JOIN_REQUEST', f'Rejected join request for {user_id}: {reason}')
-        
-        # Add notification to user
-        add_notification(
-            user_id,
-            'Join Request Rejected',
-            f'Your request to join the agency has been rejected. Reason: {reason}',
-            'error',
-            None,
-            'user-times'
-        )
-        
-        return jsonify({
-            'success': True,
-            'message': 'Join request rejected successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error rejecting join request: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to reject join request'
-        }), 500
-
-# API routes for pass management
-@app.route('/api/issue_pass', methods=['POST'])
-def issue_pass():
-    if 'user' not in session or session['role'] != 'agency':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    data = request.json
-    worker_id = data.get('worker_id')
-    pass_type = data.get('pass_type')
-    valid_from = data.get('valid_from')
-    valid_until = data.get('valid_until')
-    access_areas = data.get('access_areas', [])
-    purpose = data.get('purpose', '')
-    
-    if not all([worker_id, pass_type, valid_from, valid_until]):
-        return jsonify({'success': False, 'message': 'Missing required fields'}), 400
-    
-    agency_code = session.get('agency_code')
-    if not agency_code:
-        return jsonify({'success': False, 'message': 'No agency associated with account'}), 400
-    
-    try:
-        # Get worker details
-        worker = execute_db_query(
-            "SELECT * FROM users WHERE user_id = ? AND agency_code = ? AND join_request_status = 'approved'",
-            (worker_id, agency_code),
+        # Get visitor's photo from database
+        visitor = execute_db_query(
+            "SELECT photo_file FROM users WHERE user_id = ?",
+            (visitor_id,),
             fetch_one=True
         )
         
-        if not worker:
-            return jsonify({'success': False, 'message': 'Worker not found or not approved'}), 404
+        if not visitor:
+            return jsonify({'success': False, 'message': 'Visitor not found'}), 404
         
-        # Generate pass ID
-        pass_id = f"PASS-{agency_code}-{str(uuid.uuid4())[:6].upper()}"
+        face_verified = False
+        face_match_score = 0.0
         
-        # Insert pass into database
-        execute_db_query('''
-        INSERT INTO worker_passes (pass_id, agency_code, worker_id, worker_name, pass_type, valid_from, valid_until, access_areas, purpose, status, issued_by, issued_date, qr_code)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            pass_id,
-            agency_code,
-            worker_id,
-            worker['name'],
-            pass_type,
-            valid_from,
-            valid_until,
-            json.dumps(access_areas),
-            purpose,
-            'active',
-            session['user_id'],
-            datetime.now().strftime('%Y-%m-%d'),
-            pass_id  # Use pass_id as QR code data for now
-        ))
-        
-        # Log system action
-        log_system_action(session['user_id'], 'ISSUE_PASS', f'Issued {pass_type} pass {pass_id} to {worker["name"]}')
-        
-        # Add notification to worker
-        add_notification(
-            worker_id,
-            'New Pass Issued',
-            f'A new {pass_type} pass has been issued to you. Pass ID: {pass_id}',
-            'success',
-            None,
-            'id-card'
-        )
+        if visitor['photo_file'] and visitor['photo_file'] != 'placeholder.jpg' and photo_data:
+            known_image_path = os.path.join(app.config['UPLOAD_FOLDER'], visitor['photo_file'])
+            face_match_score = compare_faces(known_image_path, photo_data)
+            face_verified = face_match_score > 0.7  # Threshold for face verification
         
         return jsonify({
             'success': True,
-            'message': 'Pass issued successfully',
-            'pass_id': pass_id
+            'face_verified': face_verified,
+            'face_match_score': face_match_score
         })
         
     except Exception as e:
-        logger.error(f"Error issuing pass: {str(e)}")
+        logger.error(f"Error verifying face: {str(e)}")
         return jsonify({
             'success': False,
-            'message': 'Failed to issue pass'
+            'message': 'Failed to verify face'
         }), 500
-
-@app.route('/api/get_pass/<pass_id>')
-def get_pass(pass_id):
-    if 'user' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    try:
-        # Get pass details
-        pass_data = execute_db_query('''
-        SELECT wp.*, u.name as worker_name, u.photo_file, a.agency_name 
-        FROM worker_passes wp 
-        JOIN users u ON wp.worker_id = u.user_id 
-        JOIN agencies a ON wp.agency_code = a.agency_code 
-        WHERE wp.pass_id = ?
-        ''', (pass_id,), fetch_one=True)
-        
-        if not pass_data:
-            return jsonify({'success': False, 'message': 'Pass not found'}), 404
-        
-        # Check authorization
-        if session['role'] == 'agency' and pass_data['agency_code'] != session.get('agency_code'):
-            return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-        
-        # Parse access areas
-        access_areas = json.loads(pass_data['access_areas']) if pass_data['access_areas'] else []
-        
-        # Generate HTML for pass view
-        html = f'''
-        <div class="pass-card bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg">
-            <div class="text-center mb-4">
-                <h3 class="text-xl font-bold">WORKER ACCESS PASS</h3>
-                <p class="text-sm opacity-90">{pass_data["agency_name"]}</p>
-            </div>
-            
-            <div class="flex items-center space-x-4 mb-4">
-                <div class="w-16 h-16 rounded-full overflow-hidden bg-white">
-                    {"<img src='/static/uploads/" + pass_data["photo_file"] + "' class='w-full h-full object-cover'>" if pass_data["photo_file"] and pass_data["photo_file"] != "placeholder.jpg" else "<div class='w-full h-full flex items-center justify-center text-gray-400'><i class='fas fa-user'></i></div>"}
-                </div>
-                <div>
-                    <h4 class="font-bold text-lg">{pass_data["worker_name"]}</h4>
-                    <p class="text-sm opacity-90">{pass_data["worker_id"]}</p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                    <p class="opacity-75">Pass ID</p>
-                    <p class="font-semibold">{pass_data["pass_id"]}</p>
-                </div>
-                <div>
-                    <p class="opacity-75">Type</p>
-                    <p class="font-semibold">{pass_data["pass_type"].title()}</p>
-                </div>
-                <div>
-                    <p class="opacity-75">Valid From</p>
-                    <p class="font-semibold">{pass_data["valid_from"]}</p>
-                </div>
-                <div>
-                    <p class="opacity-75">Valid Until</p>
-                    <p class="font-semibold">{pass_data["valid_until"]}</p>
-                </div>
-            </div>
-            
-            {"<div class='mt-4'><p class='opacity-75 text-sm'>Access Areas:</p><p class='text-sm'>" + ", ".join(access_areas) + "</p></div>" if access_areas else ""}
-            
-            <div class="mt-4 text-center">
-                <div class="bg-white text-black p-2 rounded inline-block">
-                    <i class="fas fa-qrcode text-2xl"></i>
-                    <p class="text-xs mt-1">{pass_data["pass_id"]}</p>
-                </div>
-            </div>
-            
-            <div class="mt-4 text-center text-xs opacity-75">
-                <p>Status: {pass_data["status"].title()}</p>
-                <p>Issued: {pass_data["issued_date"]}</p>
-            </div>
-        </div>
-        '''
-        
-        return jsonify({
-            'success': True,
-            'html': html
-        })
-        
-    except Exception as e:
-        logger.error(f"Error getting pass: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to get pass details'
-        }), 500
-
-@app.route('/api/download_pass/<pass_id>')
-def download_pass(pass_id):
-    if 'user' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    try:
-        # Get pass details
-        pass_data = execute_db_query('''
-        SELECT wp.*, u.name as worker_name, u.photo_file, a.agency_name 
-        FROM worker_passes wp 
-        JOIN users u ON wp.worker_id = u.user_id 
-        JOIN agencies a ON wp.agency_code = a.agency_code 
-        WHERE wp.pass_id = ?
-        ''', (pass_id,), fetch_one=True)
-        
-        if not pass_data:
-            return jsonify({'success': False, 'message': 'Pass not found'}), 404
-        
-        # Check authorization
-        if session['role'] == 'agency' and pass_data['agency_code'] != session.get('agency_code'):
-            return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-        
-        # Parse access areas
-        access_areas = json.loads(pass_data['access_areas']) if pass_data['access_areas'] else []
-        
-        # Prepare data for PDF generation
-        pdf_data = {
-            'pass_id': pass_data['pass_id'],
-            'worker_name': pass_data['worker_name'],
-            'worker_id': pass_data['worker_id'],
-            'agency_name': pass_data['agency_name'],
-            'pass_type': pass_data['pass_type'],
-            'valid_from': pass_data['valid_from'],
-            'valid_until': pass_data['valid_until'],
-            'status': pass_data['status'],
-            'issued_date': pass_data['issued_date'],
-            'access_areas': access_areas,
-            'purpose': pass_data['purpose']
-        }
-        
-        # Generate PDF
-        pdf_filename = generate_pass_pdf(pdf_data)
-        
-        if pdf_filename:
-            pdf_path = os.path.join('static/passes', pdf_filename)
-            return send_file(pdf_path, as_attachment=True, download_name=f"pass_{pass_id}.pdf")
-        else:
-            return jsonify({'success': False, 'message': 'Failed to generate PDF'}), 500
-        
-    except Exception as e:
-        logger.error(f"Error downloading pass: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to download pass'
-        }), 500
-
-@app.route('/api/revoke_pass', methods=['POST'])
-def revoke_pass():
-    if 'user' not in session or session['role'] != 'agency':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    data = request.json
-    pass_id = data.get('pass_id')
-    reason = data.get('reason', 'No reason provided')
-    
-    if not pass_id:
-        return jsonify({'success': False, 'message': 'Pass ID is required'}), 400
-    
-    agency_code = session.get('agency_code')
-    if not agency_code:
-        return jsonify({'success': False, 'message': 'No agency associated with account'}), 400
-    
-    try:
-        # Get pass details
-        pass_data = execute_db_query(
-            "SELECT * FROM worker_passes WHERE pass_id = ? AND agency_code = ?",
-            (pass_id, agency_code),
-            fetch_one=True
-        )
-        
-        if not pass_data:
-            return jsonify({'success': False, 'message': 'Pass not found'}), 404
-        
-        # Update pass status
-        execute_db_query('''
-        UPDATE worker_passes 
-        SET status = 'revoked', revoked_by = ?, revoked_date = ?, revoke_reason = ?
-        WHERE pass_id = ?
-        ''', (
-            session['user_id'],
-            datetime.now().strftime('%Y-%m-%d'),
-            reason,
-            pass_id
-        ))
-        
-        # Log system action
-        log_system_action(session['user_id'], 'REVOKE_PASS', f'Revoked pass {pass_id}: {reason}')
-        
-        # Add notification to worker
-        add_notification(
-            pass_data['worker_id'],
-            'Pass Revoked',
-            f'Your pass {pass_id} has been revoked. Reason: {reason}',
-            'warning',
-            None,
-            'ban'
-        )
-        
-        return jsonify({
-            'success': True,
-            'message': 'Pass revoked successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error revoking pass: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to revoke pass'
-        }), 500
-
-# API routes for blacklist management
-@app.route('/api/add_flagged_aadhaar', methods=['POST'])
-def add_flagged_aadhaar():
-    if 'user' not in session or session['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    data = request.json
-    aadhaar = data.get('aadhaar')
-    reason = data.get('reason', 'Security concern')
-    
-    if not aadhaar:
-        return jsonify({'success': False, 'message': 'Aadhaar number is required'}), 400
-    
-    if not validate_aadhaar(aadhaar):
-        return jsonify({'success': False, 'message': 'Invalid Aadhaar number format'}), 400
-    
-    # Get last 4 digits only
-    last4 = get_aadhaar_last4(aadhaar)
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Check if already blacklisted
-    cursor.execute("SELECT COUNT(*) FROM flagged_aadhaar WHERE aadhaar_last4 = ?", (last4,))
-    if cursor.fetchone()[0] > 0:
-        conn.close()
-        return jsonify({'success': False, 'message': 'This Aadhaar number is already blacklisted'}), 400
-    
-    # Add to blacklist (only store last 4 digits)
-    cursor.execute('''
-    INSERT INTO flagged_aadhaar (aadhaar_last4, reason, added_by, added_on)
-    VALUES (?, ?, ?, ?)
-    ''', (
-        last4,
-        reason,
-        session['name'],
-        datetime.now().strftime('%Y-%m-%d')
-    ))
-    
-    # Check if any visitor has this Aadhaar (using last 4 digits)
-    cursor.execute("SELECT user_id FROM users WHERE aadhaar LIKE ? AND role = 'visitor'", (f'%{last4}',))
-    visitors = cursor.fetchall()
-    
-    for visitor in visitors:
-        # Add notification for visitor
-        add_notification(
-            visitor['user_id'],
-            'Account Restricted',
-            'Your account has been restricted. Please contact the administrator for more information.',
-            'error',
-            None,
-            'user-slash',
-            'high'
-        )
-    
-    conn.commit()
-    conn.close()
-    
-    # Log system action
-    log_system_action(session['user_id'], 'ADD_BLACKLIST', f'Added Aadhaar ending in {last4} to blacklist: {reason}')
-    
-    # Add notification for security personnel
-    send_notification_to_role(
-        'security',
-        'New Blacklisted Aadhaar',
-        f'A new Aadhaar number ending in {last4} has been added to the blacklist. Reason: {reason}',
-        'warning',
-        None,
-        'exclamation-triangle',
-        'high'
-    )
-    
-    return jsonify({
-        'success': True,
-        'message': 'Aadhaar number added to blacklist successfully'
-    })
-
-@app.route('/api/remove_flagged_aadhaar', methods=['POST'])
-def remove_flagged_aadhaar():
-    if 'user' not in session or session['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    aadhaar = request.json.get('aadhaar')
-    
-    if not aadhaar:
-        return jsonify({'success': False, 'message': 'Aadhaar number is required'}), 400
-    
-    last4 = get_aadhaar_last4(aadhaar)
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Remove from blacklist
-    cursor.execute("DELETE FROM flagged_aadhaar WHERE aadhaar_last4 = ?", (last4,))
-    
-    if cursor.rowcount == 0:
-        conn.close()
-        return jsonify({'success': False, 'message': 'Aadhaar number not found in blacklist'}), 404
-    
-    # Check if any visitor has this Aadhaar
-    cursor.execute("SELECT user_id FROM users WHERE aadhaar LIKE ? AND role = 'visitor'", (f'%{last4}',))
-    visitors = cursor.fetchall()
-    
-    for visitor in visitors:
-        # Add notification for visitor
-        add_notification(
-            visitor['user_id'],
-            'Account Restored',
-            'Your account restrictions have been lifted.',
-            'success',
-            None,
-            'user-check'
-        )
-    
-    conn.commit()
-    conn.close()
-    
-    # Log system action
-    log_system_action(session['user_id'], 'REMOVE_BLACKLIST', f'Removed Aadhaar ending in {last4} from blacklist')
-    
-    return jsonify({
-        'success': True,
-        'message': 'Aadhaar number removed from blacklist successfully'
-    })
 
 # API routes for notifications
 @app.route('/api/mark_notification_read', methods=['POST'])
@@ -2404,925 +2607,102 @@ def mark_all_notifications_read():
             'message': 'Failed to mark notifications as read'
         }), 500
 
-@app.route('/api/get_notifications')
-def get_notifications():
-    if 'user' not in session:
+@app.route('/api/get_active_passes')
+def get_active_passes():
+    if 'user' not in session or session['role'] != 'security':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     try:
-        notifications = get_user_notifications(session['user_id'])
-        unread_count = get_unread_notification_count(session['user_id'])
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Get all active passes for today (both visitors and workers)
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get approved visitor requests for today
+        cursor.execute("""
+        SELECT 
+            vr.request_id as pass_id,
+            vr.visitor_id,
+            vr.visitor_name,
+            'visitor' as pass_type,
+            vr.department,
+            vr.date,
+            vr.time,
+            u.photo_file,
+            u.phone,
+            u.email
+        FROM visit_requests vr
+        JOIN users u ON vr.visitor_id = u.user_id
+        WHERE vr.status = 'approved' 
+        AND vr.date = ?
+        ORDER BY vr.time
+        """, (today,))
+        
+        visitor_passes = cursor.fetchall()
+        
+        # Get active worker passes for today
+        cursor.execute("""
+        SELECT 
+            wp.pass_id,
+            wp.worker_id as visitor_id,
+            wp.worker_name as visitor_name,
+            wp.pass_type,
+            wp.access_areas as department,
+            wp.valid_from as date,
+            '09:00' as time,
+            u.photo_file,
+            u.phone,
+            u.email,
+            a.agency_name
+        FROM worker_passes wp
+        JOIN users u ON wp.worker_id = u.user_id
+        LEFT JOIN agencies a ON wp.agency_code = a.agency_code
+        WHERE wp.status = 'active' 
+        AND wp.valid_from <= ? 
+        AND wp.valid_until >= ?
+        ORDER BY wp.worker_name
+        """, (today, today))
+        
+        worker_passes = cursor.fetchall()
+        
+        conn.close()
+        
+        # Combine and format the results
+        all_passes = []
+        
+        # Add visitor passes
+        for pass_row in visitor_passes:
+            pass_dict = dict(pass_row)
+            pass_dict['access_areas'] = [pass_dict['department']]
+            pass_dict['pass_type_display'] = 'Visitor Pass'
+            pass_dict['agency_name'] = None
+            all_passes.append(pass_dict)
+        
+        # Add worker passes
+        for pass_row in worker_passes:
+            pass_dict = dict(pass_row)
+            try:
+                if pass_dict['department']:
+                    pass_dict['access_areas'] = json.loads(pass_dict['department'])
+                else:
+                    pass_dict['access_areas'] = []
+            except:
+                pass_dict['access_areas'] = []
+            pass_dict['pass_type_display'] = f"{pass_dict['pass_type'].title()} Worker Pass"
+            all_passes.append(pass_dict)
         
         return jsonify({
             'success': True,
-            'notifications': [dict(n) for n in notifications],
-            'unread_count': unread_count
+            'passes': all_passes,
+            'count': len(all_passes)
         })
         
     except Exception as e:
-        logger.error(f"Error getting notifications: {str(e)}")
+        logger.error(f"Error getting active passes: {str(e)}")
         return jsonify({
             'success': False,
-            'message': 'Failed to get notifications'
-        }), 500
-
-# API routes for admin functions
-@app.route('/api/send_notification', methods=['POST'])
-def send_notification():
-    if 'user' not in session or session['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    try:
-        data = request.json
-        title = data.get('title')
-        message = data.get('message')
-        target_audience = data.get('target_audience', 'all')
-        notification_type = data.get('type', 'info')
-        priority = data.get('priority', 'normal')
-        
-        if not all([title, message]):
-            return jsonify({'success': False, 'message': 'Title and message are required'}), 400
-        
-        # Send notification based on target audience
-        if target_audience == 'all':
-            # Send to all active users
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT user_id FROM users WHERE status = 'active'")
-            users = cursor.fetchall()
-            conn.close()
-            
-            for user in users:
-                add_notification(user['user_id'], title, message, notification_type, None, 'bullhorn', priority)
-        else:
-            # Send to specific role
-            send_notification_to_role(target_audience, title, message, notification_type, None, 'bullhorn', priority)
-        
-        # Log system action
-        log_system_action(session['user_id'], 'SEND_NOTIFICATION', f'Sent notification to {target_audience}: {title}')
-        
-        return jsonify({
-            'success': True,
-            'message': 'Notification sent successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error sending notification: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to send notification'
-        }), 500
-
-@app.route('/api/create_notice', methods=['POST'])
-def create_notice():
-    if 'user' not in session or session['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    try:
-        title = request.form.get('title')
-        content = request.form.get('content')
-        notice_type = request.form.get('type', 'info')
-        priority = request.form.get('priority', 'normal')
-        target_audience = request.form.get('target_audience', 'all')
-        expires_at = request.form.get('expires_at')
-        
-        if not all([title, content]):
-            return jsonify({'success': False, 'message': 'Title and content are required'}), 400
-        
-        # Handle file attachment
-        attachment_file = None
-        if 'attachment' in request.files:
-            file = request.files['attachment']
-            if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                attachment_file = f"{uuid.uuid4().hex}_{filename}"
-                file.save(os.path.join('static/notices', attachment_file))
-        
-        # Insert notice
-        execute_db_query('''
-        INSERT INTO notices (title, content, type, priority, target_audience, created_by, created_at, expires_at, is_active, attachment_file)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            title,
-            content,
-            notice_type,
-            priority,
-            target_audience,
-            session['user_id'],
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            expires_at if expires_at else None,
-            1,
-            attachment_file
-        ))
-        
-        # Log system action
-        log_system_action(session['user_id'], 'CREATE_NOTICE', f'Created notice: {title}')
-        
-        # Send notification about new notice
-        if target_audience == 'all':
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT user_id FROM users WHERE status = 'active'")
-            users = cursor.fetchall()
-            conn.close()
-            
-            for user in users:
-                add_notification(
-                    user['user_id'],
-                    'New Notice',
-                    f'A new notice has been posted: {title}',
-                    'info',
-                    None,
-                    'clipboard',
-                    priority
-                )
-        else:
-            send_notification_to_role(
-                target_audience,
-                'New Notice',
-                f'A new notice has been posted: {title}',
-                'info',
-                None,
-                'clipboard',
-                priority
-            )
-        
-        return jsonify({
-            'success': True,
-            'message': 'Notice created successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error creating notice: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to create notice'
-        }), 500
-
-# API routes for user management
-@app.route('/api/update_profile', methods=['POST'])
-def update_profile():
-    if 'user' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    try:
-        name = request.form.get('name')
-        email = request.form.get('email')
-        phone = request.form.get('phone')
-        current_password = request.form.get('current_password')
-        new_password = request.form.get('new_password')
-        photo_data = request.form.get('photoData')
-        
-        if not all([name, email, phone]):
-            return jsonify({'success': False, 'message': 'Name, email, and phone are required'}), 400
-        
-        # Get current user data
-        user = execute_db_query(
-            "SELECT * FROM users WHERE user_id = ?",
-            (session['user_id'],),
-            fetch_one=True
-        )
-        
-        if not user:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
-        
-        # Verify current password if changing password
-        if new_password:
-            if not current_password:
-                return jsonify({'success': False, 'message': 'Current password is required to change password'}), 400
-            
-            # In production, use check_password(user['password'], current_password)
-            if user['password'] != current_password:
-                return jsonify({'success': False, 'message': 'Current password is incorrect'}), 400
-        
-        # Handle photo upload
-        photo_file = user['photo_file']  # Keep existing photo by default
-        if photo_data:
-            new_photo = handle_photo_upload(photo_data)
-            if new_photo:
-                photo_file = new_photo
-        
-        # Update user data
-        if new_password:
-            execute_db_query('''
-            UPDATE users 
-            SET name = ?, email = ?, phone = ?, password = ?, photo_file = ?
-            WHERE user_id = ?
-            ''', (name, email, phone, new_password, photo_file, session['user_id']))
-        else:
-            execute_db_query('''
-            UPDATE users 
-            SET name = ?, email = ?, phone = ?, photo_file = ?
-            WHERE user_id = ?
-            ''', (name, email, phone, photo_file, session['user_id']))
-        
-        # Update session name if changed
-        if name != session.get('name'):
-            session['name'] = name
-        
-        # Log system action
-        log_system_action(session['user_id'], 'UPDATE_PROFILE', 'Profile updated')
-        
-        return jsonify({
-            'success': True,
-            'message': 'Profile updated successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error updating profile: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to update profile'
-        }), 500
-
-@app.route('/api/update_settings', methods=['POST'])
-def update_settings():
-    if 'user' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    try:
-        data = request.json
-        
-        # Update or insert user settings
-        execute_db_query('''
-        INSERT OR REPLACE INTO user_settings 
-        (user_id, email_notifications, sms_notifications, theme, language, dashboard_widgets, notification_sound, auto_logout, profile_visibility)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            session['user_id'],
-            data.get('email_notifications', 1),
-            data.get('sms_notifications', 0),
-            data.get('theme', 'light'),
-            data.get('language', 'en'),
-            json.dumps(data.get('dashboard_widgets', [])),
-            data.get('notification_sound', 1),
-            data.get('auto_logout', 30),
-            data.get('profile_visibility', 'private')
-        ))
-        
-        # Log system action
-        log_system_action(session['user_id'], 'UPDATE_SETTINGS', 'Settings updated')
-        
-        return jsonify({
-            'success': True,
-            'message': 'Settings updated successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error updating settings: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to update settings'
-        }), 500
-
-# Routes for user approval
-@app.route('/approve_registration/<username>')
-def approve_registration(username):
-    if 'user' not in session or session['role'] != 'admin':
-        return redirect(url_for('login'))
-    
-    try:
-        # Update user status
-        execute_db_query(
-            "UPDATE users SET status = 'active' WHERE username = ?",
-            (username,)
-        )
-        
-        # Get user details for notification
-        user = execute_db_query(
-            "SELECT * FROM users WHERE username = ?",
-            (username,),
-            fetch_one=True
-        )
-        
-        if user:
-            # Add notification to user
-            add_notification(
-                user['user_id'],
-                'Account Approved',
-                'Your account has been approved. You can now login and access the system.',
-                'success',
-                None,
-                'user-check'
-            )
-        
-        # Log system action
-        log_system_action(session['user_id'], 'APPROVE_USER', f'Approved user registration: {username}')
-        
-        flash('User registration approved successfully', 'success')
-        
-    except Exception as e:
-        logger.error(f"Error approving registration: {str(e)}")
-        flash('Failed to approve registration', 'error')
-    
-    return redirect(url_for('dashboard_admin'))
-
-@app.route('/reject_registration/<username>')
-def reject_registration(username):
-    if 'user' not in session or session['role'] != 'admin':
-        return redirect(url_for('login'))
-    
-    try:
-        # Get user details before deletion
-        user = execute_db_query(
-            "SELECT * FROM users WHERE username = ?",
-            (username,),
-            fetch_one=True
-        )
-        
-        # Delete user
-        execute_db_query(
-            "DELETE FROM users WHERE username = ?",
-            (username,)
-        )
-        
-        # Log system action
-        log_system_action(session['user_id'], 'REJECT_USER', f'Rejected user registration: {username}')
-        
-        flash('User registration rejected successfully', 'success')
-        
-    except Exception as e:
-        logger.error(f"Error rejecting registration: {str(e)}")
-        flash('Failed to reject registration', 'error')
-    
-    return redirect(url_for('dashboard_admin'))
-
-@app.route('/approve_agency/<agency_code>')
-def approve_agency(agency_code):
-    if 'user' not in session or session['role'] != 'admin':
-        return redirect(url_for('login'))
-    
-    try:
-        # Update agency status
-        execute_db_query('''
-        UPDATE agencies 
-        SET status = 'approved', approved_by = ?, approved_date = ?
-        WHERE agency_code = ?
-        ''', (session['user_id'], datetime.now().strftime('%Y-%m-%d'), agency_code))
-        
-        # Get agency details
-        agency = execute_db_query(
-            "SELECT * FROM agencies WHERE agency_code = ?",
-            (agency_code,),
-            fetch_one=True
-        )
-        
-        if agency:
-            # Create agency admin user
-            agency_user_id = generate_user_id('agency')
-            execute_db_query('''
-            INSERT INTO users (username, password, role, name, user_id, phone, email, photo_file, registration_date, status, agency_code)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                agency_code,  # Username is agency code
-                agency['password'],
-                'agency',
-                agency['contact_person'],
-                agency_user_id,
-                agency['contact_phone'],
-                agency['contact_email'],
-                'placeholder.jpg',
-                datetime.now().strftime('%Y-%m-%d'),
-                'active',
-                agency_code
-            ))
-            
-            # Create default settings for agency user
-            execute_db_query('''
-            INSERT INTO user_settings (user_id, email_notifications, sms_notifications, theme, language, dashboard_widgets, notification_sound, auto_logout, profile_visibility)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                agency_user_id,
-                1, 0, 'light', 'en',
-                json.dumps(['profile', 'notifications']),
-                1, 30, 'private'
-            ))
-        
-        # Log system action
-        log_system_action(session['user_id'], 'APPROVE_AGENCY', f'Approved agency: {agency_code}')
-        
-        flash('Agency approved successfully', 'success')
-        
-    except Exception as e:
-        logger.error(f"Error approving agency: {str(e)}")
-        flash('Failed to approve agency', 'error')
-    
-    return redirect(url_for('dashboard_admin'))
-
-@app.route('/reject_agency/<agency_code>')
-def reject_agency(agency_code):
-    if 'user' not in session or session['role'] != 'admin':
-        return redirect(url_for('login'))
-    
-    try:
-        # Delete agency
-        execute_db_query(
-            "DELETE FROM agencies WHERE agency_code = ?",
-            (agency_code,)
-        )
-        
-        # Log system action
-        log_system_action(session['user_id'], 'REJECT_AGENCY', f'Rejected agency: {agency_code}')
-        
-        flash('Agency registration rejected successfully', 'success')
-        
-    except Exception as e:
-        logger.error(f"Error rejecting agency: {str(e)}")
-        flash('Failed to reject agency', 'error')
-    
-    return redirect(url_for('dashboard_admin'))
-
-# Profile and settings routes
-@app.route('/profile')
-def profile():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Get user data
-    cursor.execute("SELECT * FROM users WHERE username = ?", (session['user'],))
-    user = cursor.fetchone()
-    
-    # Get user notifications
-    notifications = get_user_notifications(session['user_id'])
-    unread_count = get_unread_notification_count(session['user_id'])
-    
-    conn.close()
-    
-    if not user:
-        return redirect(url_for('login'))
-    
-    masked_aadhaar = mask_aadhaar(user['aadhaar']) if user['aadhaar'] else "Not provided"
-    
-    return render_template('profile.html', 
-                         user=user, 
-                         masked_aadhaar=masked_aadhaar,
-                         notifications=notifications,
-                         unread_count=unread_count)
-
-@app.route('/settings')
-def settings():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    
-    settings = get_user_settings(session['user_id'])
-    notifications = get_user_notifications(session['user_id'])
-    unread_count = get_unread_notification_count(session['user_id'])
-    
-    return render_template('settings.html', 
-                         settings=settings,
-                         notifications=notifications,
-                         unread_count=unread_count)
-
-@app.route('/agencies')
-def agencies():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Get approved agencies
-    cursor.execute("SELECT * FROM agencies WHERE status = 'approved' ORDER BY agency_name")
-    agencies_data = cursor.fetchall()
-    
-    # Get user notifications
-    notifications = get_user_notifications(session['user_id'])
-    unread_count = get_unread_notification_count(session['user_id'])
-    
-    conn.close()
-    
-    # Convert to list of dicts and parse locations_access
-    agencies_list = []
-    for agency in agencies_data:
-        agency_dict = dict(agency)
-        try:
-            agency_dict['locations_access'] = json.loads(agency['locations_access']) if agency['locations_access'] else []
-        except:
-            agency_dict['locations_access'] = []
-        agencies_list.append(agency_dict)
-    
-    return render_template('agencies.html', 
-                         agencies=agencies_list,
-                         notifications=notifications,
-                         unread_count=unread_count)
-
-# Add these routes to app.py
-
-@app.route('/api/get_user_details')
-def get_user_details():
-    if 'user' not in session or session['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    username = request.args.get('username')
-    if not username:
-        return jsonify({'success': False, 'message': 'Username is required'}), 400
-    
-    try:
-        user = execute_db_query(
-            "SELECT * FROM users WHERE username = ?",
-            (username,),
-            fetch_one=True
-        )
-        
-        if not user:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
-        
-        # Prepare HTML response
-        html = f'''
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <div class="flex items-center space-x-4 mb-4">
-                    <div class="flex-shrink-0 h-16 w-16">
-                        <img class="h-16 w-16 rounded-full" src="{url_for('static', filename='uploads/' + user['photo_file']) if user['photo_file'] and user['photo_file'] != 'placeholder.jpg' else url_for('static', filename='images/placeholder.jpg')}" alt="">
-                    </div>
-                    <div>
-                        <h4 class="text-lg font-bold text-gray-900">{user['name']}</h4>
-                        <p class="text-sm text-gray-500">@{user['username']}</p>
-                    </div>
-                </div>
-                
-                <div class="space-y-3">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">User ID</p>
-                        <p class="text-sm text-gray-900">{user['user_id']}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Role</p>
-                        <p class="text-sm text-gray-900">{user['role'].title()}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Status</p>
-                        <p class="text-sm text-gray-900">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {'bg-green-100 text-green-800' if user['status'] == 'active' else 'bg-yellow-100 text-yellow-800'}">
-                                {user['status'].title()}
-                            </span>
-                        </p>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Registered On</p>
-                        <p class="text-sm text-gray-900">{user['registration_date']}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="space-y-3">
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Email</p>
-                    <p class="text-sm text-gray-900">{user['email']}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Phone</p>
-                    <p class="text-sm text-gray-900">{user['phone']}</p>
-                </div>
-                {"<div><p class='text-sm font-medium text-gray-500'>Aadhaar</p><p class='text-sm text-gray-900'>XXXX-XXXX-" + user['aadhaar'][-4:] + "</p></div>" if user['aadhaar'] else ""}
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Last Login</p>
-                    <p class="text-sm text-gray-900">{user['last_login'] if user['last_login'] else 'Never logged in'}</p>
-                </div>
-            </div>
-        </div>
-        
-        {"<div class='mt-6'><h5 class='font-medium text-gray-700 mb-2'>Agency Information</h5>" + 
-         "<div class='grid grid-cols-1 md:grid-cols-2 gap-4'>" +
-         "<div><p class='text-sm font-medium text-gray-500'>Agency Code</p><p class='text-sm text-gray-900'>" + user['agency_code'] + "</p></div>" +
-         "<div><p class='text-sm font-medium text-gray-500'>Employee ID</p><p class='text-sm text-gray-900'>" + user['agency_employee_id'] + "</p></div>" +
-         "<div><p class='text-sm font-medium text-gray-500'>Designation</p><p class='text-sm text-gray-900'>" + user['agency_designation'] + "</p></div>" +
-         "</div></div>" if user['agency_code'] else ""}
-        '''
-        
-        return jsonify({
-            'success': True,
-            'html': html
-        })
-        
-    except Exception as e:
-        logger.error(f"Error getting user details: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to get user details'
-        }), 500
-
-@app.route('/api/get_agency_details')
-def get_agency_details():
-    if 'user' not in session or session['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    agency_code = request.args.get('agency_code')
-    if not agency_code:
-        return jsonify({'success': False, 'message': 'Agency code is required'}), 400
-    
-    try:
-        agency = execute_db_query(
-            "SELECT * FROM agencies WHERE agency_code = ?",
-            (agency_code,),
-            fetch_one=True
-        )
-        
-        if not agency:
-            return jsonify({'success': False, 'message': 'Agency not found'}), 404
-        
-        # Parse locations access
-        locations_access = json.loads(agency['locations_access']) if agency['locations_access'] else []
-        
-        # Prepare HTML response
-        html = f'''
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h4 class="text-lg font-bold text-gray-900 mb-2">{agency['agency_name']}</h4>
-                <p class="text-sm text-gray-500 mb-4">{agency['agency_type']} - {agency['agency_code']}</p>
-                
-                <div class="space-y-3">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Status</p>
-                        <p class="text-sm text-gray-900">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {'bg-green-100 text-green-800' if agency['status'] == 'approved' else 'bg-yellow-100 text-yellow-800'}">
-                                {agency['status'].title()}
-                            </span>
-                        </p>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Registration Date</p>
-                        <p class="text-sm text-gray-900">{agency['registration_date']}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Expiry Date</p>
-                        <p class="text-sm text-gray-900">{agency['expiry_date']}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">License Number</p>
-                        <p class="text-sm text-gray-900">{agency['license_number']}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="space-y-3">
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Contact Person</p>
-                    <p class="text-sm text-gray-900">{agency['contact_person']}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Contact Email</p>
-                    <p class="text-sm text-gray-900">{agency['contact_email']}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Contact Phone</p>
-                    <p class="text-sm text-gray-900">{agency['contact_phone']}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Website</p>
-                    <p class="text-sm text-gray-900">{agency['website'] if agency['website'] else 'Not provided'}</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="mt-6">
-            <h5 class="font-medium text-gray-700 mb-2">Address</h5>
-            <p class="text-sm text-gray-900">{agency['address']}</p>
-        </div>
-        
-        {"<div class='mt-6'><h5 class='font-medium text-gray-700 mb-2'>Description</h5><p class='text-sm text-gray-900'>" + agency['description'] + "</p></div>" if agency['description'] else ""}
-        
-        {"<div class='mt-6'><h5 class='font-medium text-gray-700 mb-2'>Access Locations</h5><ul class='list-disc list-inside text-sm text-gray-900'>" + 
-         "".join([f"<li>{location}</li>" for location in locations_access]) + "</ul></div>" if locations_access else ""}
-        
-        <div class="mt-6">
-            <h5 class="font-medium text-gray-700 mb-2">Admin Information</h5>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Created By</p>
-                    <p class="text-sm text-gray-900">{agency['created_by']}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Approved By</p>
-                    <p class="text-sm text-gray-900">{agency['approved_by'] if agency['approved_by'] else 'Not approved yet'}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Approved Date</p>
-                    <p class="text-sm text-gray-900">{agency['approved_date'] if agency['approved_date'] else 'Not approved yet'}</p>
-                </div>
-            </div>
-        </div>
-        '''
-        
-        return jsonify({
-            'success': True,
-            'html': html
-        })
-        
-    except Exception as e:
-        logger.error(f"Error getting agency details: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to get agency details'
-        }), 500
-
-@app.route('/api/activate_user', methods=['POST'])
-def activate_user():
-    if 'user' not in session or session['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    data = request.json
-    username = data.get('username')
-    
-    if not username:
-        return jsonify({'success': False, 'message': 'Username is required'}), 400
-    
-    try:
-        # Update user status
-        execute_db_query(
-            "UPDATE users SET status = 'active' WHERE username = ?",
-            (username,)
-        )
-        
-        # Get user details for notification
-        user = execute_db_query(
-            "SELECT * FROM users WHERE username = ?",
-            (username,),
-            fetch_one=True
-        )
-        
-        if user:
-            # Add notification to user
-            add_notification(
-                user['user_id'],
-                'Account Activated',
-                'Your account has been activated by the administrator.',
-                'success',
-                None,
-                'user-check'
-            )
-        
-        # Log system action
-        log_system_action(session['user_id'], 'ACTIVATE_USER', f'Activated user: {username}')
-        
-        return jsonify({
-            'success': True,
-            'message': 'User activated successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error activating user: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to activate user'
-        }), 500
-
-@app.route('/api/deactivate_user', methods=['POST'])
-def deactivate_user():
-    if 'user' not in session or session['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    data = request.json
-    username = data.get('username')
-    
-    if not username:
-        return jsonify({'success': False, 'message': 'Username is required'}), 400
-    
-    try:
-        # Update user status
-        execute_db_query(
-            "UPDATE users SET status = 'inactive' WHERE username = ?",
-            (username,)
-        )
-        
-        # Get user details for notification
-        user = execute_db_query(
-            "SELECT * FROM users WHERE username = ?",
-            (username,),
-            fetch_one=True
-        )
-        
-        if user:
-            # Add notification to user
-            add_notification(
-                user['user_id'],
-                'Account Deactivated',
-                'Your account has been deactivated by the administrator. Please contact support for more information.',
-                'error',
-                None,
-                'user-slash'
-            )
-        
-        # Log system action
-        log_system_action(session['user_id'], 'DEACTIVATE_USER', f'Deactivated user: {username}')
-        
-        return jsonify({
-            'success': True,
-            'message': 'User deactivated successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error deactivating user: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to deactivate user'
-        }), 500
-
-@app.route('/api/suspend_agency', methods=['POST'])
-def suspend_agency():
-    if 'user' not in session or session['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    data = request.json
-    agency_code = data.get('agency_code')
-    
-    if not agency_code:
-        return jsonify({'success': False, 'message': 'Agency code is required'}), 400
-    
-    try:
-        # Update agency status
-        execute_db_query(
-            "UPDATE agencies SET status = 'suspended' WHERE agency_code = ?",
-            (agency_code,)
-        )
-        
-        # Deactivate all agency users
-        execute_db_query(
-            "UPDATE users SET status = 'inactive' WHERE agency_code = ?",
-            (agency_code,)
-        )
-        
-        # Get agency details for notification
-        agency = execute_db_query(
-            "SELECT * FROM agencies WHERE agency_code = ?",
-            (agency_code,),
-            fetch_one=True
-        )
-        
-        if agency:
-            # Add notification to agency admin
-            agency_admin = execute_db_query(
-                "SELECT user_id FROM users WHERE agency_code = ? AND role = 'agency' LIMIT 1",
-                (agency_code,),
-                fetch_one=True
-            )
-            
-            if agency_admin:
-                add_notification(
-                    agency_admin['user_id'],
-                    'Agency Suspended',
-                    'Your agency has been suspended by the administrator. Please contact support for more information.',
-                    'error',
-                    None,
-                    'building',
-                    'high'
-                )
-        
-        # Log system action
-        log_system_action(session['user_id'], 'SUSPEND_AGENCY', f'Suspended agency: {agency_code}')
-        
-        return jsonify({
-            'success': True,
-            'message': 'Agency suspended successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error suspending agency: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to suspend agency'
-        }), 500
-
-@app.route('/api/export_visitors')
-def export_visitors():
-    if 'user' not in session or session['role'] != 'admin':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
-    try:
-        # Get all visitors
-        visitors = execute_db_query(
-            "SELECT * FROM users WHERE role = 'visitor' ORDER BY name",
-            fetch_all=True
-        )
-        
-        # Create CSV content
-        csv_content = "Name,User ID,Email,Phone,Aadhaar (Last 4),Status,Registration Date,Last Login\n"
-        
-        for visitor in visitors:
-            csv_content += f"{visitor['name']},{visitor['user_id']},{visitor['email']},{visitor['phone']},"
-            csv_content += f"{visitor['aadhaar'][-4:] if visitor['aadhaar'] else ''},{visitor['status']},"
-            csv_content += f"{visitor['registration_date']},{visitor['last_login'] if visitor['last_login'] else 'Never'}\n"
-        
-        # Create response
-        response = make_response(csv_content)
-        response.headers['Content-Disposition'] = 'attachment; filename=visitors_export.csv'
-        response.headers['Content-Type'] = 'text/csv'
-        
-        # Log system action
-        log_system_action(session['user_id'], 'EXPORT_VISITORS', 'Exported visitors data')
-        
-        return response
-        
-    except Exception as e:
-        logger.error(f"Error exporting visitors: {str(e)}")
-        return jsonify({
-            'success': False,
-            'message': 'Failed to export visitors'
+            'message': 'Failed to get active passes'
         }), 500
 
 # Error handlers

@@ -21,7 +21,6 @@
                     <a href="#features" class="text-gray-700 hover:text-blue-600">Features</a>
                     <a href="#benefits" class="text-gray-700 hover:text-blue-600">Benefits</a>
                     <a href="#security" class="text-gray-700 hover:text-blue-600">Security</a>
-                    <a href="#contact" class="text-gray-700 hover:text-blue-600">Contact</a>
                 </div>
                 <div class="flex space-x-3">
                     <a href="{{ url_for('login') }}" class="px-4 py-2 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50">Login</a>
@@ -35,7 +34,7 @@
     <div class="container mx-auto px-4 py-16">
         <div class="flex flex-col md:flex-row items-center">
             <div class="md:w-1/2 mb-8 md:mb-0">
-                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Secure Access Management for Government Facilities</h1>
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Secure Access Management for Cochin Port</h1>
                 <p class="text-xl text-gray-600 mb-8">Pass4Port provides a comprehensive solution for managing visitor access with advanced security features including Aadhaar verification and facial recognition.</p>
                 <div class="flex space-x-4">
                     <a href="{{ url_for('login') }}" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 shadow-md">Get Started</a>
@@ -215,113 +214,6 @@
                 
                 <div class="md:w-1/2">
                     <img src="{{ url_for('static', filename='images/security-features.png') }}" alt="Security Features" class="rounded-lg shadow-xl">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Contact Section -->
-    <div id="contact" class="bg-gray-50 py-16">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-gray-900 mb-4">Contact Us</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Have questions about Pass4Port? Our team is here to help.</p>
-            </div>
-
-            <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-                <div class="md:flex">
-                    <div class="md:w-1/2 bg-blue-600 p-8 text-white">
-                        <h3 class="text-2xl font-bold mb-4">Get in Touch</h3>
-                        <p class="mb-6">Fill out the form and our team will get back to you within 24 hours.</p>
-                        
-                        <div class="space-y-4">
-                            <div class="flex items-start">
-                                <i class="fas fa-map-marker-alt mr-4 mt-1"></i>
-                                <span>123 Government Complex, New Delhi, India</span>
-                            </div>
-                            
-                            <div class="flex items-start">
-                                <i class="fas fa-phone mr-4 mt-1"></i>
-                                <span>+91 11 2345 6789</span>
-                            </div>
-                            
-                            <div class="flex items-start">
-                                <i class="fas fa-envelope mr-4 mt-1"></i>
-                                <span>info@pass4port.gov.in</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="md:w-1/2 p-8">
-                        <form id="contact-form" class="space-y-4">
-                            <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                                <input type="text" id="name" name="name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            
-                            <div>
-                                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                <input type="email" id="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            
-                            <div>
-                                <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                                <input type="text" id="subject" name="subject" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            
-                            <div>
-                                <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                                <textarea id="message" name="message" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                            </div>
-                            
-                            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200">Send Message</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Testimonials -->
-    <div class="bg-white py-16">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-gray-900 mb-4">Trusted by Government Agencies</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">See what our clients have to say about Pass4Port.</p>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-gray-50 p-6 rounded-lg shadow">
-                    <div class="flex items-center mb-4">
-                        <div class="h-12 w-12 rounded-full bg-gray-300 mr-4"></div>
-                        <div>
-                            <h4 class="font-semibold text-gray-900">Rajesh Kumar</h4>
-                            <p class="text-sm text-gray-600">Security Director, Ministry of External Affairs</p>
-                        </div>
-                    </div>
-                    <p class="text-gray-600">"Pass4Port has revolutionized our visitor management process. The facial recognition and Aadhaar integration provide robust security while streamlining the check-in process."</p>
-                </div>
-
-                <div class="bg-gray-50 p-6 rounded-lg shadow">
-                    <div class="flex items-center mb-4">
-                        <div class="h-12 w-12 rounded-full bg-gray-300 mr-4"></div>
-                        <div>
-                            <h4 class="font-semibold text-gray-900">Priya Sharma</h4>
-                            <p class="text-sm text-gray-600">Administrative Officer, Ministry of Home Affairs</p>
-                        </div>
-                    </div>
-                    <p class="text-gray-600">"The approval workflow has significantly reduced our administrative burden. Officers can quickly review and approve visit requests, and security staff have all the information they need."</p>
-                </div>
-
-                <div class="bg-gray-50 p-6 rounded-lg shadow">
-                    <div class="flex items-center mb-4">
-                        <div class="h-12 w-12 rounded-full bg-gray-300 mr-4"></div>
-                        <div>
-                            <h4 class="font-semibold text-gray-900">Amit Patel</h4>
-                            <p class="text-sm text-gray-600">IT Director, Central Government Services</p>
-                        </div>
-                    </div>
-                    <p class="text-gray-600">"The system's robust security features and intuitive interface have made it an essential tool for our facility. The analytics dashboard provides valuable insights for resource planning."</p>
                 </div>
             </div>
         </div>

@@ -24,7 +24,7 @@
                         <button id="notification-btn" class="p-2 text-gray-600 hover:text-gray-900">
                             <i class="fas fa-bell"></i>
                             {% if unread_count > 0 %}
-                            <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{{ unrea_count }}</span>
+                            <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">{{ unread_count }}</span>
                             {% endif %}
                         </button>
                         <div id="notification-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-10">
@@ -52,7 +52,7 @@
                                             </div>
                                             <div class="ml-3 w-0 flex-1">
                                                 <p class="text-sm font-medium text-gray-900">{{ notification.title }}</p>
-                                                <p class="text-sm text-gray-500">{{ notification.message }}p>
+                                                <p class="text-sm text-gray-500">{{ notification.message }}</p>
                                                 <p class="text-xs text-gray-400 mt-1">{{ notification.created_at }}</p>
                                             </div>
                                             <div class="ml-4 flex-shrink-0">
@@ -78,8 +78,8 @@
                         </button>
                         <div id="settings-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
                             <div class="py-1">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                                <a href="{{ url_for('profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="{{ url_for('settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
                                 <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
                             </div>
                         </div>
@@ -97,45 +97,39 @@
                 <div class="bg-white rounded-lg shadow-sm p-6">
                     <h2 class="text-lg font-semibold mb-4">Visitor Verification</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Aadhaar Verification -->
-                        <div class="border rounded-lg p-4">
-                            <h3 class="font-medium mb-3">Verify by Aadhaar</h3>
-                            <form id="aadhaar-verification-form">
-                                <div class="mb-4">
-                                    <label for="aadhaar" class="block text-sm font-medium text-gray-700 mb-1">Aadhaar Number</label>
-                                    <input type="text" id="aadhaar" name="aadhaar" class="w-full px-3 py-2 border rounded-md" placeholder="Enter 12-digit Aadhaar number" maxlength="12">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Capture Photo</label>
-                                    <div class="relative">
-                                        <div id="camera-container" class="w-full h-48 bg-gray-100 border rounded-md flex items-center justify-center">
-                                            <video id="video" class="hidden w-full h-full object-cover rounded-md"></video>
-                                            <canvas id="canvas" class="hidden w-full h-full object-cover rounded-md"></canvas>
-                                            <div id="camera-placeholder" class="text-center">
-                                                <i class="fas fa-camera text-gray-400 text-3xl mb-2"></i>
-                                                <p class="text-sm text-gray-500">Camera will appear here</p>
-                                            </div>
-                                        </div>
-                                        <div class="absolute bottom-2 right-2 flex space-x-2">
-                                            <button type="button" id="start-camera" class="bg-blue-600 text-white p-1 rounded-full">
-                                                <i class="fas fa-video"></i>
-                                            </button>
-                                            <button type="button" id="capture-photo" class="bg-green-600 text-white p-1 rounded-full hidden">
-                                                <i class="fas fa-camera"></i>
-                                            </button>
-                                            <button type="button" id="retake-photo" class="bg-yellow-600 text-white p-1 rounded-full hidden">
-                                                <i class="fas fa-redo"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Verify Visitor</button>
-                            </form>
-                        </div>
+                        <!-- Visitor Selection -->
+                        <!-- In the Visitor Selection section, replace the current code with this: -->
+<div class="border rounded-lg p-4">
+    <h3 class="font-medium mb-3">Select Visitor</h3>
+    <div class="mb-4">
+        <label for="visitor-select" class="block text-sm font-medium text-gray-700 mb-1">Approved Passes</label>
+        <select id="visitor-select" class="w-full px-3 py-2 border rounded-md">
+            <option value="">Select a visitor</option>
+            {% for pass in active_passes %}
+            <option value="{{ pass.worker_id }}" 
+                    data-name="{{ pass.worker_name }}"
+                    data-photo="{{ pass.photo_file if pass.photo_file else 'placeholder.jpg' }}"
+                    data-pass-id="{{ pass.pass_id }}"
+                    data-pass-type="{{ pass.pass_type }}"
+                    data-access-areas="{{ pass.access_areas|tojson }}"
+                    data-agency="{{ pass.agency_name if pass.agency_name else 'N/A' }}"
+                    data-phone="{{ pass.phone if pass.phone else 'N/A' }}"
+                    data-email="{{ pass.email if pass.email else 'N/A' }}">
+                {{ pass.worker_name }} ({{ pass.worker_id }}) - {{ pass.agency_name if pass.agency_name else 'N/A' }}
+            </option>
+            {% else %}
+            <option value="" disabled>No active passes found</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button id="verify-visitor-btn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 hidden">
+        Verify Visitor
+    </button>
+</div>
                         
                         <!-- Verification Results -->
                         <div id="verification-results" class="border rounded-lg p-4 hidden">
-                            <h3 class="font-medium mb-3">Verification Results</h3>
+                            <h3 class="font-medium mb-3">Visitor Details</h3>
                             <div id="visitor-details" class="space-y-3">
                                 <!-- Will be populated by JavaScript -->
                             </div>
@@ -236,6 +230,7 @@
 </div>
 
 <!-- Exit Modal -->
+<!-- Exit Modal -->
 <div id="exit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
         <div class="flex justify-between items-center mb-4">
@@ -259,428 +254,269 @@
 
 <!-- JavaScript for Security Dashboard -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Notification dropdown toggle
-        const notificationBtn = document.getElementById('notification-btn');
-        const notificationDropdown = document.getElementById('notification-dropdown');
-        
-        if (notificationBtn && notificationDropdown) {
-            notificationBtn.addEventListener('click', function() {
-                notificationDropdown.classList.toggle('hidden');
-            });
-        }
-        
-        // Settings dropdown toggle
-        const settingsBtn = document.getElementById('settings-btn');
-        const settingsDropdown = document.getElementById('settings-dropdown');
-        
-        if (settingsBtn && settingsDropdown) {
-            settingsBtn.addEventListener('click', function() {
-                settingsDropdown.classList.toggle('hidden');
-            });
-        }
-        
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(event) {
-            if (notificationBtn && !notificationBtn.contains(event.target) && 
-                notificationDropdown && !notificationDropdown.contains(event.target)) {
-                notificationDropdown.classList.add('hidden');
+document.addEventListener('DOMContentLoaded', function() {
+    // Visitor verification elements
+    const visitorSelect = document.getElementById('visitor-select');
+    const verifyVisitorBtn = document.getElementById('verify-visitor-btn');
+    const verificationResults = document.getElementById('verification-results');
+    const visitorDetails = document.getElementById('visitor-details');
+    const recordEntryBtn = document.getElementById('record-entry-btn');
+    const denyEntryBtn = document.getElementById('deny-entry-btn');
+    
+    let verifiedVisitor = null;
+    
+    // Show verify button when visitor is selected
+    if (visitorSelect) {
+        visitorSelect.addEventListener('change', function() {
+            if (this.value) {
+                verifyVisitorBtn.classList.remove('hidden');
+            } else {
+                verifyVisitorBtn.classList.add('hidden');
+                verificationResults.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Handle verify visitor button click
+    if (verifyVisitorBtn) {
+        verifyVisitorBtn.addEventListener('click', function() {
+            const selectedOption = visitorSelect.options[visitorSelect.selectedIndex];
+            
+            // Get visitor data from selected option
+            const visitorId = selectedOption.value;
+            const visitorName = selectedOption.getAttribute('data-name');
+            const visitorPhoto = selectedOption.getAttribute('data-photo');
+            const passId = selectedOption.getAttribute('data-pass-id');
+            const passType = selectedOption.getAttribute('data-pass-type');
+            let accessAreas = [];
+try {
+    accessAreas = JSON.parse(selectedOption.getAttribute('data-access-areas'));
+    if (!Array.isArray(accessAreas)) accessAreas = [accessAreas];  // Wrap string in array
+} catch (e) {
+    const raw = selectedOption.getAttribute('data-access-areas');
+    accessAreas = raw ? [raw] : [];
+}
+
+            const agency = selectedOption.getAttribute('data-agency');
+            const phone = selectedOption.getAttribute('data-phone');
+            const email = selectedOption.getAttribute('data-email');
+            
+            // Store verified visitor data
+            verifiedVisitor = {
+                user_id: visitorId,
+                name: visitorName,
+                photo_url: visitorPhoto ? `/static/uploads/${visitorPhoto}` : '/static/images/placeholder.jpg',
+                pass_id: passId,
+                pass_type: passType,
+                access_areas: accessAreas,
+                agency: agency,
+                phone: phone,
+                email: email
+            };
+            
+            // Display visitor details
+            displayVisitorDetails(verifiedVisitor);
+            
+            // Show verification results
+            verificationResults.classList.remove('hidden');
+            
+            // Hide verify button (optional)
+            verifyVisitorBtn.classList.add('hidden');
+        });
+    }
+    
+    function displayVisitorDetails(visitor) {
+    const html = `
+        <div class="flex items-center space-x-4">
+            <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200">
+                <img src="${visitor.photo_url || '/static/images/placeholder.jpg'}" alt="Visitor" class="w-full h-full object-cover">
+            </div>
+            <div>
+                <h4 class="font-medium">${visitor.name}</h4>
+                <p class="text-sm text-gray-500">ID: ${visitor.user_id}</p>
+                <p class="text-sm text-gray-500">Pass: ${visitor.pass_id}</p>
+            </div>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <div><span class="font-medium">Phone:</span> ${visitor.phone || 'N/A'}</div>
+            <div><span class="font-medium">Email:</span> ${visitor.email || 'N/A'}</div>
+            <div><span class="font-medium">Agency:</span> ${visitor.agency || 'N/A'}</div>
+            <div><span class="font-medium">Pass Type:</span> ${visitor.pass_type}</div>
+        </div>
+        <div class="mt-4">
+            <p class="text-sm font-medium">Access Areas:</p>
+            <ul class="list-disc list-inside text-sm ml-2">
+                ${visitor.access_areas && visitor.access_areas.length > 0 ?
+                    visitor.access_areas.map(area => `<li>${area}</li>`).join('') :
+                    '<li>No specific access areas</li>'}
+            </ul>
+        </div>
+        <div class="mt-4 p-3 bg-gray-50 rounded-md">
+            <p class="text-sm font-medium">Verification Summary:</p>
+            <p class="text-sm mt-1">Visitor details verified. Ready to record entry.</p>
+        </div>
+    `;
+    visitorDetails.innerHTML = html;
+}
+
+    
+    // Record entry button
+    if (recordEntryBtn) {
+        recordEntryBtn.addEventListener('click', function() {
+            if (!verifiedVisitor) {
+                alert('No visitor selected');
+                return;
             }
             
-            if (settingsBtn && !settingsBtn.contains(event.target) && 
-                settingsDropdown && !settingsDropdown.contains(event.target)) {
-                settingsDropdown.classList.add('hidden');
+            // Get primary access area
+            let department = verifiedVisitor.access_areas[0] || 'General Access';
+            
+            // Show loading state
+            const originalText = recordEntryBtn.textContent;
+            recordEntryBtn.disabled = true;
+            recordEntryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            // Call API to record entry
+            fetch('/api/record_entry', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pass_id: verifiedVisitor.pass_id,
+                    visitor_id: verifiedVisitor.user_id,
+                    visitor_name: verifiedVisitor.name,
+                    department: department,
+                    agency_code: verifiedVisitor.agency === 'N/A' ? null : verifiedVisitor.agency,
+                    pass_type: verifiedVisitor.pass_type
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Entry recorded successfully. Pass ID: ${data.pass_id}`);
+                    // Reset the form
+                    visitorSelect.value = '';
+                    verificationResults.classList.add('hidden');
+                    verifyVisitorBtn.classList.add('hidden');
+                    verifiedVisitor = null;
+                    // Reload page to refresh entry logs
+                    window.location.reload();
+                } else {
+                    throw new Error(data.message || 'Entry recording failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'An error occurred while recording entry');
+            })
+            .finally(() => {
+                // Reset button state
+                recordEntryBtn.disabled = false;
+                recordEntryBtn.innerHTML = originalText;
+            });
+        });
+    }
+    
+    // Deny entry button
+    if (denyEntryBtn) {
+        denyEntryBtn.addEventListener('click', function() {
+            if (!verifiedVisitor) {
+                alert('No visitor selected');
+                return;
             }
-        });
-        
-        // Mark notification as read
-        const markReadBtns = document.querySelectorAll('.mark-read-btn');
-        markReadBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const notificationId = this.getAttribute('data-id');
-                fetch('/api/mark_notification_read', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ notification_id: notificationId }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Remove the background color
-                        this.closest('.bg-blue-50').classList.remove('bg-blue-50');
-                        
-                        // Update unread count
-                        const unreadCountElement = document.querySelector('#notification-btn span');
-                        if (unreadCountElement) {
-                            const currentCount = parseInt(unreadCountElement.textContent);
-                            if (currentCount > 1) {
-                                unreadCountElement.textContent = currentCount - 1;
-                            } else {
-                                unreadCountElement.remove();
-                            }
-                        }
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        });
-        
-        // Mark all notifications as read
-        const markAllReadBtn = document.getElementById('mark-all-read');
-        if (markAllReadBtn) {
-            markAllReadBtn.addEventListener('click', function() {
-                fetch('/api/mark_all_notifications_read', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Remove all background colors
-                        document.querySelectorAll('.bg-blue-50').forEach(el => {
-                            el.classList.remove('bg-blue-50');
-                        });
-                        
-                        // Remove unread count
-                        const unreadCountElement = document.querySelector('#notification-btn span');
-                        if (unreadCountElement) {
-                            unreadCountElement.remove();
-                        }
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        }
-        
-        // Camera functionality
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const startCameraBtn = document.getElementById('start-camera');
-        const capturePhotoBtn = document.getElementById('capture-photo');
-        const retakePhotoBtn = document.getElementById('retake-photo');
-        const cameraPlaceholder = document.getElementById('camera-placeholder');
-        
-        let stream = null;
-        let photoData = null;
-        
-        if (startCameraBtn) {
-            startCameraBtn.addEventListener('click', function() {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({ video: true })
-                        .then(function(mediaStream) {
-                            stream = mediaStream;
-                            video.srcObject = mediaStream;
-                            video.play();
-                            
-                            // Show video and capture button
-                            video.classList.remove('hidden');
-                            capturePhotoBtn.classList.remove('hidden');
-                            cameraPlaceholder.classList.add('hidden');
-                            startCameraBtn.classList.add('hidden');
-                        })
-                        .catch(function(error) {
-                            console.error('Error accessing camera:', error);
-                            alert('Could not access camera. Please check permissions.');
-                        });
-                } else {
-                    alert('Your browser does not support camera access.');
-                }
-            });
-        }
-        
-        if (capturePhotoBtn) {
-            capturePhotoBtn.addEventListener('click', function() {
-                // Draw video frame to canvas
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                // Get image data
-                photoData = canvas.toDataURL('image/jpeg');
-                
-                // Show canvas and retake button
-                canvas.classList.remove('hidden');
-                retakePhotoBtn.classList.remove('hidden');
-                video.classList.add('hidden');
-                capturePhotoBtn.classList.add('hidden');
-                
-                // Stop camera stream
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
-            });
-        }
-        
-        if (retakePhotoBtn) {
-            retakePhotoBtn.addEventListener('click', function() {
-                // Clear photo data
-                photoData = null;
-                
-                // Show start camera button
-                startCameraBtn.classList.remove('hidden');
-                canvas.classList.add('hidden');
-                retakePhotoBtn.classList.add('hidden');
-                cameraPlaceholder.classList.remove('hidden');
-            });
-        }
-        
-        // Aadhaar verification form
-        const aadhaarVerificationForm = document.getElementById('aadhaar-verification-form');
-        const verificationResults = document.getElementById('verification-results');
-        const visitorDetails = document.getElementById('visitor-details');
-        const recordEntryBtn = document.getElementById('record-entry-btn');
-        const denyEntryBtn = document.getElementById('deny-entry-btn');
-        
-        let verifiedVisitor = null;
-        
-        if (aadhaarVerificationForm) {
-            aadhaarVerificationForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const aadhaar = document.getElementById('aadhaar').value.trim();
-                
-                if (!aadhaar) {
-                    alert('Please enter Aadhaar number');
-                    return;
-                }
-                
-                // Validate Aadhaar format (12 digits)
-                if (!/^\d{12}$/.test(aadhaar.replace(/\s/g, ''))) {
-                    alert('Please enter a valid 12-digit Aadhaar number');
-                    return;
-                }
-                
-                // Call API to verify visitor
-                fetch('/api/verify_visitor', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        aadhaar: aadhaar,
-                        photoData: photoData
-                    }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Show verification results
-                        verificationResults.classList.remove('hidden');
-                        
-                        // Store verified visitor data
-                        verifiedVisitor = data.visitor;
-                        verifiedVisitor.aadhaar = aadhaar; // Store original Aadhaar for entry recording
-                        
-                        // Display visitor details
-                        let faceVerificationClass = verifiedVisitor.face_verified ? 'text-green-600' : 'text-red-600';
-                        let faceVerificationIcon = verifiedVisitor.face_verified ? 'fa-check-circle' : 'fa-times-circle';
-                        let faceVerificationText = verifiedVisitor.face_verified ? 'Face Verified' : 'Face Not Verified';
-                        
-                        let hasApprovedVisitsClass = verifiedVisitor.has_approved_visits ? 'text-green-600' : 'text-yellow-600';
-                        let hasApprovedVisitsIcon = verifiedVisitor.has_approved_visits ? 'fa-check-circle' : 'fa-exclamation-circle';
-                        let hasApprovedVisitsText = verifiedVisitor.has_approved_visits ? 'Has Approved Visits' : 'No Approved Visits';
-                        
-                        visitorDetails.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h4 class="font-medium">${verifiedVisitor.name}</h4>
-                                    <p class="text-sm text-gray-500">ID: ${verifiedVisitor.user_id}</p>
-                                    <p class="text-sm text-gray-500">Aadhaar: ${verifiedVisitor.masked_aadhaar}</p>
-                                </div>
-                                ${verifiedVisitor.photo_url ? `
-                                <div class="w-16 h-16 rounded-full overflow-hidden">
-                                    <img src="${verifiedVisitor.photo_url}" alt="Visitor" class="w-full h-full object-cover">
-                                </div>
-                                ` : ''}
-                            </div>
-                            <div class="flex items-center space-x-2 text-sm">
-                                <i class="fas ${faceVerificationIcon} ${faceVerificationClass}"></i>
-                                <span class="${faceVerificationClass}">${faceVerificationText}</span>
-                                <span class="text-gray-400">|</span>
-                                <i class="fas ${hasApprovedVisitsIcon} ${hasApprovedVisitsClass}"></i>
-                                <span class="${hasApprovedVisitsClass}">${hasApprovedVisitsText}</span>
-                            </div>
-                        `;
-                        
-                        // Add approved visits if any
-                        if (verifiedVisitor.has_approved_visits && verifiedVisitor.approved_visits.length > 0) {
-                            let visitsHtml = `
-                                <div class="mt-3">
-                                    <h5 class="text-sm font-medium">Approved Visits:</h5>
-                                    <ul class="mt-1 space-y-1">
-                            `;
-                            
-                            verifiedVisitor.approved_visits.forEach(visit => {
-                                visitsHtml += `
-                                    <li class="text-xs bg-green-50 p-2 rounded">
-                                        <div class="flex justify-between">
-                                            <span>${visit.department}</span>
-                                            <span>${visit.date}</span>
-                                        </div>
-                                        <div class="text-gray-500">Purpose: ${visit.purpose}</div>
-                                    </li>
-                                `;
-                            });
-                            
-                            visitsHtml += `
-                                    </ul>
-                                </div>
-                            `;
-                            
-                            visitorDetails.innerHTML += visitsHtml;
-                        }
-                    } else {
-                        // Show error message
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while verifying visitor');
-                });
-            });
-        }
-        
-        // Record entry button
-        if (recordEntryBtn) {
-            recordEntryBtn.addEventListener('click', function() {
-                if (!verifiedVisitor) {
-                    alert('No verified visitor');
-                    return;
-                }
-                
-                // Get department from approved visits or prompt user
-                let department = '';
-                if (verifiedVisitor.has_approved_visits && verifiedVisitor.approved_visits.length > 0) {
-                    department = verifiedVisitor.approved_visits[0].department;
-                } else {
-                    department = prompt('Enter department for visit:');
-                    if (!department) return;
-                }
-                
-                // Call API to record entry
-                fetch('/api/record_entry', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        visitor_id: verifiedVisitor.user_id,
-                        aadhaar: verifiedVisitor.aadhaar,
-                        department: department,
-                        photoData: photoData,
-                        faceMatchScore: verifiedVisitor.face_match_score
-                    }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(`Entry recorded successfully. Pass ID: ${data.pass_id}`);
-                        // Reload page to refresh entry logs
-                        window.location.reload();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while recording entry');
-                });
-            });
-        }
-        
-        // Deny entry button
-        if (denyEntryBtn) {
-            denyEntryBtn.addEventListener('click', function() {
-                alert('Entry denied. Visitor has been notified.');
+            
+            if (confirm(`Deny entry for ${verifiedVisitor.name}?`)) {
+                alert('Entry denied.');
                 // Reset verification
                 verificationResults.classList.add('hidden');
+                verifyVisitorBtn.classList.add('hidden');
                 verifiedVisitor = null;
-                document.getElementById('aadhaar').value = '';
-                
-                // Reset camera
-                if (retakePhotoBtn) {
-                    retakePhotoBtn.click();
+                visitorSelect.value = '';
+            }
+        });
+    }
+    // Exit modal elements
+    const exitModal = document.getElementById('exit-modal');
+    const recordExitBtn = document.getElementById('record-exit-btn');
+    const closeExitModal = document.getElementById('close-exit-modal');
+    const cancelExit = document.getElementById('cancel-exit');
+    const exitForm = document.getElementById('exit-form');
+
+    // Show exit modal when record exit button is clicked
+    if (recordExitBtn) {
+        recordExitBtn.addEventListener('click', function() {
+            exitModal.classList.remove('hidden');
+        });
+    }
+
+    // Close exit modal
+    if (closeExitModal) {
+        closeExitModal.addEventListener('click', function() {
+            exitModal.classList.add('hidden');
+        });
+    }
+
+    // Cancel exit
+    if (cancelExit) {
+        cancelExit.addEventListener('click', function() {
+            exitModal.classList.add('hidden');
+        });
+    }
+
+    // Handle exit form submission
+    if (exitForm) {
+        exitForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const passId = document.getElementById('exit-pass-id').value.trim();
+
+            if (!passId) {
+                alert('Please enter Pass ID');
+                return;
+            }
+
+            const submitBtn = exitForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            fetch('/api/record_exit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ pass_id: passId }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Exit recorded successfully.');
+                    exitModal.classList.add('hidden');
+                    window.location.reload();
+                } else {
+                    throw new Error(data.message || 'Exit recording failed');
                 }
-            });
-        }
-        
-        // Record exit modal
-        const recordExitBtnMain = document.getElementById('record-exit-btn');
-        const exitModal = document.getElementById('exit-modal');
-        const closeExitModal = document.getElementById('close-exit-modal');
-        const cancelExit = document.getElementById('cancel-exit');
-        const exitForm = document.getElementById('exit-form');
-        
-        if (recordExitBtnMain && exitModal) {
-            recordExitBtnMain.addEventListener('click', function() {
-                exitModal.classList.remove('hidden');
-            });
-        }
-        
-        if (closeExitModal && exitModal) {
-            closeExitModal.addEventListener('click', function() {
-                exitModal.classList.add('hidden');
-            });
-        }
-        
-        if (cancelExit && exitModal) {
-            cancelExit.addEventListener('click', function() {
-                exitModal.classList.add('hidden');
-            });
-        }
-        
-        // Record exit from table
-        const recordExitBtns = document.querySelectorAll('.record-exit-btn');
-        recordExitBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const passId = this.getAttribute('data-pass-id');
-                document.getElementById('exit-pass-id').value = passId;
-                exitModal.classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'An error occurred while recording exit');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Record Exit';
             });
         });
-        
-        // Exit form submission
-        if (exitForm) {
-            exitForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const passId = document.getElementById('exit-pass-id').value.trim();
-                
-                if (!passId) {
-                    alert('Please enter Pass ID');
-                    return;
-                }
-                
-                // Call API to record exit
-                fetch('/api/record_exit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ pass_id: passId }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Exit recorded successfully');
-                        exitModal.classList.add('hidden');
-                        // Reload page to refresh entry logs
-                        window.location.reload();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while recording exit');
-                });
-            });
-        }
+    }
+
+    // Handle exit buttons in the entry logs table
+    document.querySelectorAll('.record-exit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const passId = this.getAttribute('data-pass-id');
+            document.getElementById('exit-pass-id').value = passId;
+            exitModal.classList.remove('hidden');
+        });
     });
+});
+
 </script>
 {% endblock %}
